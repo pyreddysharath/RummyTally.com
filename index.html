@@ -3903,10 +3903,15 @@
     document.body.classList.remove('show-board');
     document.querySelectorAll('.ft-sec').forEach(sec => { sec.hidden = true; });
   }
+  // How it works / Feedback / Privacy open over New Game or a game; Back returns to it untouched
+  let infoOver = false, infoScroll = 0;
   function openPage(name) {
     closeMenu();
-    if (setup) closeSetup();
-    leaveHome();
+    const over = name !== 'rooms' && !page && curScreen() !== 'home';
+    if (over) { infoOver = true; infoScroll = window.scrollY; try { history.pushState({ rummyInfo: 1 }, ''); } catch (e) { /* ignore */ } }
+    else if (name === 'rooms') infoOver = false;
+    if (setup && !infoOver) closeSetup();
+    if (!infoOver) leaveHome();
     page = name;
     roomsOpen = name === 'rooms';
     if (name !== 'rooms') { document.body.classList.remove('show-board'); showFooterPage(name); }
@@ -3914,7 +3919,16 @@
     renderRooms();
     window.scrollTo(0, 0);
   }
+  function closeInfoPage() {
+    infoOver = false;
+    hidePage();
+    renderPage();
+    renderRooms();
+    renderScreen();
+    requestAnimationFrame(() => window.scrollTo(0, infoScroll));   // back where you were
+  }
   function goHome(fromPop) {
+    infoOver = false;
     closeMenu();
     hidePage();
     if (setup) closeSetup();
@@ -4021,8 +4035,14 @@
   function toggleRooms() { if (page === 'rooms') goHome(); else openPage('rooms'); }
   const openRoomsPage = () => openPage('rooms');
   const closeRoomsPage = () => { hidePage(); renderPage(); renderRooms(); };
-  window.addEventListener('popstate', () => { navHistory = false; if (curScreen() !== 'home') goHome(true); });
-  $('btnBack').addEventListener('click', () => goHome());
+  window.addEventListener('popstate', () => {
+    if (infoOver && page) { closeInfoPage(); return; }   // back from an info page: to what was underneath
+    navHistory = false; if (curScreen() !== 'home') goHome(true);
+  });
+  $('btnBack').addEventListener('click', () => {
+    if (infoOver && page) { try { history.back(); } catch (e) { closeInfoPage(); } return; }
+    goHome();
+  });
   // Tapping the RummyTally name at the top goes home (the game keeps going; Continue brings it back)
   $('tbBrand').addEventListener('click', () => goHome());
   $('tbBrand').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goHome(); } });
