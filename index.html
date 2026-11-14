@@ -3383,7 +3383,7 @@
         ${useOld ? `${fromSelectHtml() ? `<div class="su-from-row">${fromSelectHtml()}</div>` : ''}
         ${prev.length > 1 ? `<div class="so-tip"><span>Tap the circles in seating order</span>${(setup.orderTaps || []).length ? '<button type="button" class="so-reset" data-su="orderreset">Reset</button>' : ''}</div>` : ''}
         <ol class="su-edit so-live">${prev.map((p, i) => { const n = (setup.orderTaps || []).indexOf(i) + 1;
-          return `<li><button type="button" class="so-b ${n ? 'on' : ''}" data-su="taporder" data-i="${i}" aria-pressed="${!!n}" aria-label="Seat ${n || i + 1}: ${esc(p.name)}">${n || ((setup.orderTaps || []).length ? '' : i + 1)}</button>
+          return `<li><button type="button" class="so-b ${n ? 'on' : ''}" data-su="taporder" data-i="${i}" aria-pressed="${!!n}" aria-label="Seat ${n || i + 1}: ${esc(p.name)}">${n || ''}</button>
           <input type="text" id="suPE${i}" class="su-pe" data-pi="${i}" maxlength="30" value="${esc(p.name)}" aria-label="Player ${i + 1}" autocomplete="off">
           <button type="button" class="su-rm" data-su="rmprev" data-i="${i}" aria-label="Remove ${esc(p.name)}">${I_X}</button></li>`; }).join('')}</ol>` : ''}` : '';
     const chips = setup.added.length ? `<div class="su-chips">${setup.added.map((n, i) => `<span class="su-chip">${esc(n)}<button type="button" data-su="rmplayer" data-i="${i}" aria-label="Remove ${esc(n)}">${I_X}</button></span>`).join('')}</div>` : '';
