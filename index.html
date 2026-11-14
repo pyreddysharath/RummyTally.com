@@ -1415,6 +1415,10 @@
     background: color-mix(in srgb, var(--felt) 12%, #fff); color: var(--felt); font-size: .84rem; font-weight: 700; white-space: nowrap; }
   .ft-sub:hover { background: color-mix(in srgb, var(--felt) 20%, #fff); }
   .ft-sub.on, .ft-sub.on:hover { background: var(--felt); color: #fff; }
+  /* Privacy: each section title on its own line with a bar in the tab colour */
+  #ft-privacy p > b:first-child { display: flex; align-items: center; gap: 8px; margin: 0 0 3px; color: var(--felt); }
+  #ft-privacy p > b:first-child::before { content: ""; width: 4px; height: 15px; border-radius: 2px; background: var(--felt); flex: 0 0 auto; }
+  #ft-privacy p { margin-bottom: 12px; }
   @media (min-width: 600px) { .ft-sub { flex: 0 0 auto; padding: 9px 22px 8px; } }
   .fb-form { display: grid; gap: 8px; }
   .fb-form input, .fb-form textarea { font: inherit; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; resize: vertical; }
@@ -1904,11 +1908,11 @@
         <button type="button" class="ft-sub" data-ftsub="disclaimer">Disclaimer</button>
       </div>
       <div class="ft-subsec" id="ft-privacy">
-        <p><b>On this device:</b> your games and settings stay in this browser.</p>
-        <p><b>Online rooms:</b> a room's name, players, scores and times are kept in Google Firebase so people with its link can see them. Share links only with people you trust. A game is deleted 1 year after it was last played or changed, a room once it has no games left, or sooner if the owner deletes them. Shared links stop working after 1 year.</p>
-        <p><b>Google sign-in (optional):</b> your name and email are used only to keep your rooms on your account.</p>
-        <p><b>Feedback:</b> the name and message you send reach us for review.</p>
-        <p><b>Ads:</b> see Cookies.</p>
+        <p><b>On this device</b> Your games and settings stay in this browser.</p>
+        <p><b>Online rooms</b> A room's name, players, scores and times are kept in Google Firebase so people with its link can see them. Share links only with people you trust. A game is deleted 1 year after it was last played or changed, a room once it has no games left, or sooner if the owner deletes them. Shared links stop working after 1 year.</p>
+        <p><b>Google sign-in (optional)</b> Your name and email are used only to keep your rooms on your account.</p>
+        <p><b>Feedback</b> The name and message you send reach us for review.</p>
+        <p><b>Ads</b> See Cookies.</p>
       </div>
       <div class="ft-subsec" id="ft-cookies" hidden>
         <p>This site shows ads from <b>Google AdSense</b>, which may use cookies to show and personalise ads – only after you accept. If you decline, no ad cookies are set. The app itself needs no cookies; your games are kept in the browser's storage.</p>
