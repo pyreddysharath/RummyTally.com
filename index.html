@@ -1163,6 +1163,12 @@
   .end-btn .eg-ico { color: #a12a1c; font-size: 1.25em; line-height: 1; }
   .end-btn.reopen { color: var(--felt); border-color: var(--felt) !important; }
   .end-btn.reopen:hover:not(:disabled) { background: #f2f8f4; }
+  /* Filled buttons under the clock */
+  .clock-btns .end-btn:not(.reopen) { background: #fbe3df; color: #9e2b1e; border-color: #e7a59c !important; }
+  .clock-btns .end-btn:not(.reopen):hover { background: #f8d4ce; }
+  .clock-btns .end-btn.reopen { background: var(--primary-soft); }
+  .clock-btns .calc-btn { background: #fbedc6; color: #6b4a00; border-color: #e3c06a; }
+  .clock-btns .calc-btn:hover { background: #f8e3a8; }
   .end-btn .chev { width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); margin-top: -4px; transition: transform .15s; }
   .end-btn[aria-expanded="true"] .chev { transform: rotate(-135deg); margin-top: 3px; }
   .end-btn.reopen .chev { display: none; }
@@ -1698,7 +1704,7 @@
       <div class="gs-row"><label for="setLimit">Total limit</label><input type="number" id="setLimit" min="1" step="1" inputmode="numeric"></div>
       <div class="gs-row"><label for="setDrop">Drop count</label><input type="number" id="setDrop" min="1" step="1" inputmode="numeric"></div>
       <div class="gs-row"><label for="setFull">Full count</label><input type="number" id="setFull" min="1" step="1" inputmode="numeric"></div>
-      <div class="gs-row" id="shareGroup"><label for="setShare">Buy-in per player (₹)</label><input type="number" id="setShare" min="1" step="1" inputmode="numeric" placeholder="e.g. 100" aria-label="Entry or buy-in per player in rupees"></div>
+      <div class="gs-row" id="shareGroup"><label for="setShare">Buy-in per player</label><input type="number" id="setShare" min="1" step="1" inputmode="numeric" placeholder="e.g. 100" aria-label="Entry or buy-in per player in rupees"></div>
       <div class="msg" id="shareMsg"></div>
       <div class="gs-row gs-pick"><span class="gs-l">Who deals first</span>
         <div class="gs-seg" role="radiogroup" aria-label="Who deals first"><label><input type="radio" name="firstDealer" value="last"><span>Last player</span></label><label><input type="radio" name="firstDealer" value="first"><span>First player</span></label></div></div>
@@ -1799,8 +1805,8 @@
       <div class="time-details" id="timeBody" hidden></div>
       <label class="awake-line" title="Saved on this phone for every game"><input type="checkbox" id="setAwake"> Keep the screen on during the game</label>
       <div class="clock-btns">
-        <button class="end-btn" id="btnEndGame" type="button" aria-expanded="false" aria-controls="endBox"><span class="eg-label"><span class="eg-ico">■</span> End Game</span><span class="chev" aria-hidden="true"></span></button>
-        <button class="calc-btn" id="btnShares" type="button" aria-expanded="false" aria-controls="shareBox">₹ Calculate Shares <span class="chev" aria-hidden="true"></span></button>
+        <button class="end-btn" id="btnEndGame" type="button" aria-expanded="false" aria-controls="endBox"><span class="eg-label">End Game</span><span class="chev" aria-hidden="true"></span></button>
+        <button class="calc-btn" id="btnShares" type="button" aria-expanded="false" aria-controls="shareBox">Calculate Shares <span class="chev" aria-hidden="true"></span></button>
       </div>
       <div class="start-box" id="startBox" role="status" hidden>
         <span>Game started · Keep the screen on?</span>
@@ -1872,7 +1878,7 @@
         • <b>Whole room</b> – the share icon beside a room in My Rooms. They see every game in it, including new ones.<br>
         • Anyone with edit access can share; people who only watch can't. Only the owner can delete games or the room, rename the room, or delete a link with the <b>bin</b> beside it – only that link (View or Edit) stops working, nothing else is deleted – and make a new one with <b>＋ Make … link</b>.<br>
         • Links work for 1 year – the date is shown where you share them.</p></details>
-      <details><summary>4. Calculate shares</summary><p>Set the <b>Entry or buy-in per player</b> in the Game Setup (New Game, or <b>⚙ Edit</b> on the Game Setup row under Scoreboard), then tap <b>₹ Calculate Shares</b> under the scoreboard and pick how to split the pot – the <b>i</b> next to each option explains it.</p></details>
+      <details><summary>4. Calculate shares</summary><p>Set the <b>Entry or buy-in per player</b> in the Game Setup (New Game, or <b>⚙ Edit</b> on the Game Setup row under Scoreboard), then tap <b>Calculate Shares</b> under the scoreboard and pick how to split the pot – the <b>i</b> next to each option explains it.</p></details>
       <details><summary>5. My Rooms</summary><p>Tap <b>My Rooms</b> to see every room – newest first – with its games, oldest first. Tap <b>＋</b> to open a room, a game to see its scoreboard below, the share icon for its links, and the bin to delete a room or a game (you have 5 seconds to <b>Undo</b>). Deleting a room's last game deletes the room too. Under <b>Shared with me</b>, games shared one by one are grouped by room, 👁 marks watch-only, and the bin only removes them from your list. A room with no games left is deleted by itself.</p></details>
       <details><summary>6. Keep your rooms</summary><p>As a guest, your rooms are kept in this browser only – clearing its site data or switching phones loses them. <b>Sign in with Google</b> from the menu (top right) and the rooms you created follow you to every device. Links others shared with you stay on the phone where you opened them.</p></details>
       <details><summary>7. When games are deleted</summary><p>The same for everyone: a game – finished or not – is deleted <b>1 year</b> after it was last played or changed, and a room once it has no games left. Shared links work for <b>1 year</b>; the owner can delete a link and make a new one any time.</p></details>
@@ -3452,7 +3458,7 @@
     if (err) return { err, field: 'setLimit' };
     const raw = String($('setShare').value).trim();
     let share = null;
-    if (raw !== '') { share = Number(raw); if (!Number.isInteger(share) || share < 1) return { err: 'Entry or buy-in must be a whole amount of ₹1 or more.', field: 'setShare' }; }
+    if (raw !== '') { share = Number(raw); if (!Number.isInteger(share) || share < 1) return { err: 'Entry or buy-in must be a whole number, 1 or more.', field: 'setShare' }; }
     const pick = n => (document.querySelector(`input[name="${n}"]:checked`) || {}).value;
     return { settings: { limit: parseInt(v.limit, 10), drop: parseInt(v.drop, 10), full: parseInt(v.full, 10), share,
       firstDealer: pick('firstDealer') || state.settings.firstDealer, dealerOut: pick('dealerOut') || state.settings.dealerOut } };
@@ -3721,7 +3727,7 @@
     const canSetup = canEdit() && !isEnded();
     html += `<div class="sb-setup"><div class="sv" role="list" aria-label="Game Setup">`
       + `<span role="listitem" class="sv-limit"><small>Limit</small><b>${st.limit}</b></span>`
-      + `<span role="listitem" class="sv-buy"><small>Buy-in</small><b>${st.share ? '₹' + st.share.toLocaleString('en-IN') : 'Not set'}</b></span></div>`
+      + `<span role="listitem" class="sv-buy"><small>Buy-in</small><b>${st.share ? st.share.toLocaleString() : 'Not set'}</b></span></div>`
       + (canSetup ? `<button type="button" class="sb-setup-ed ${rulesEditing ? 'on' : ''}" data-setupedit aria-expanded="${rulesEditing}">${I_GEAR_S} ${rulesEditing ? 'Close' : 'Edit'}</button>` : '')
       + '</div>';
     // Chips: only what isn't visible elsewhere – Ended, and a warning when scores aren't reaching the server
@@ -4369,14 +4375,13 @@
     $('timeChip').title = { idle: 'Game clock – not started', running: 'Game clock – running', paused: 'Game clock – paused', ended: 'Game clock – ended' }[st] + '. Tap to go to Play / Pause / End Game';
     const enoughPlayers = state.players.length >= 2;
     const ended = isEnded();
-    // End Game needs at least 2 players and 1 saved round; anyone who can edit can reopen
-    const canEnd = enoughPlayers && state.rounds.length >= 1;
-    $('btnEndGame').disabled = ended ? !canReopen() : !canEnd;
+    // End Game is always available (it explains if there's nobody to pick); anyone who can edit can reopen
+    $('btnEndGame').disabled = ended ? !canReopen() : false;
     $('btnEndGame').hidden = ended && !canReopen();
-    $('btnEndGame').title = ended ? '' : !enoughPlayers ? 'Add at least 2 players first' : !canEnd ? 'Save at least 1 round to end the game' : '';
-    if (!ended && !canEnd && !$('endBox').hidden) closeDeclare();
+    $('btnEndGame').title = '';
+    if (!ended && !enoughPlayers && !$('endBox').hidden) closeDeclare();
     $('btnEndGame').classList.toggle('reopen', ended);
-    $('btnEndGame').querySelector('.eg-label').innerHTML = ended ? '↺ Reopen game' : '<span class="eg-ico">■</span> End Game';
+    $('btnEndGame').querySelector('.eg-label').innerHTML = ended ? '↺ Reopen game' : 'End Game';
     if (ended && !$('endBox').hidden) closeDeclare();
     // Time details: one-line summary, intervals inside (collapsed by default; open/closed is kept)
     if (st === 'idle') { $('timeBody').hidden = true; $('clockBox').setAttribute('aria-expanded', 'false'); }
@@ -4416,7 +4421,7 @@
   function endGame() {
     if (!canEdit()) return;
     if (isEnded()) { undoDeclare(); return; }
-    if (state.players.length < 2 || state.rounds.length < 1) return;
+    if (state.players.length < 2) { toast('Add at least 2 players first'); return; }
     if (!$('endBox').hidden) { closeDeclare(); return; }
     openDeclare();
   }
@@ -4830,7 +4835,7 @@
     if (err) { setMsg('settingsMsg', err, 'err'); return; }
     const raw = String($('setShare').value).trim();
     const share = raw === '' ? null : Number(raw);
-    if (share !== null && (!Number.isInteger(share) || share < 1)) { setMsg('settingsMsg', 'Buy-in must be a whole amount of ₹1 or more.', 'err'); return; }
+    if (share !== null && (!Number.isInteger(share) || share < 1)) { setMsg('settingsMsg', 'Buy-in must be a whole number, 1 or more.', 'err'); return; }
     const pick = n => (document.querySelector(`input[name="${n}"]:checked`) || {}).value;
     const next = { ...state.settings, limit: parseInt(v.limit, 10), drop: parseInt(v.drop, 10), full: parseInt(v.full, 10), share,
       firstDealer: pick('firstDealer') || state.settings.firstDealer, dealerOut: pick('dealerOut') || state.settings.dealerOut };
@@ -6574,7 +6579,7 @@
   let splitMethod = 'drops';
   try { const m = localStorage.getItem('rummy-split-method'); if (SPLIT_METHODS.some(x => x.id === m)) splitMethod = m; } catch (e) { /* ignore */ }
   const openInfo = new Set();
-  const rupees = n => '₹' + Number(n).toLocaleString('en-IN');
+  const rupees = n => Number(n).toLocaleString();   // plain amounts: no currency symbol, the phone's own number format
 
   // Whole rupees that always add up to the amount (largest remainder)
   function splitByWeights(amount, weights) {
@@ -6733,7 +6738,7 @@
     $('setShare').classList.remove('need');
     if (raw === '') { state.settings = { ...state.settings, share: null }; saveState(); setMsg('shareMsg', '', ''); return; }
     const n = Number(raw);
-    if (!Number.isInteger(n) || n < 1) { setMsg('shareMsg', 'Enter a whole amount of ₹1 or more.', 'err'); return; }
+    if (!Number.isInteger(n) || n < 1) { setMsg('shareMsg', 'Enter a whole number, 1 or more.', 'err'); return; }
     state.settings = { ...state.settings, share: n };
     saveState();
     setMsg('shareMsg', '', '');
