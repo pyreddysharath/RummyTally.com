@@ -3845,10 +3845,11 @@
     b.toggle('nav-mode', !home);
     const info = !!page && page !== 'rooms';
     $('btnBack').hidden = home;
-    $('tbTitle').textContent = info ? PAGE_TITLE[page] : '';
-    $('tbTitle').hidden = !info;
-    const brand = scr === 'game' || page === 'rooms';
-    $('tbNav').hidden = home || info || brand;
+    // Every page but home shows the RummyTally name at the top (tap it to go home)
+    $('tbTitle').textContent = '';
+    $('tbTitle').hidden = true;
+    const brand = !home;
+    $('tbNav').hidden = true;
     $('tbBrand').hidden = !brand;
     $('btnRoomsNav').hidden = !FB_CFG;
     $('btnRoomsNav').classList.toggle('on', page === 'rooms');
