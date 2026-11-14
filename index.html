@@ -1828,7 +1828,6 @@
         <div class="split-opts" id="splitOpts" role="radiogroup" aria-label="How to split"></div>
         <p class="share-pot" id="sharePot"></p>
         <div id="shareResult"></div>
-        <button class="share-send" id="shareWa" type="button"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="18" cy="5" r="3" fill="currentColor"/><circle cx="6" cy="12" r="3" fill="currentColor"/><circle cx="18" cy="19" r="3" fill="currentColor"/><path d="M8.6 10.6l6.8-4M8.6 13.4l6.8 4" stroke="currentColor" stroke-width="2"/></svg> Share</button>
       </div>
     </div>
 
@@ -6707,7 +6706,7 @@
               (r.steps[k] ? trio(r.steps[k].total, r.steps[k].drops, r.steps[k].pts, 'up') : (prev => trio(prev.total, prev.drops, prev.pts, 'same'))(lastState(r, k)))).join('') + '</tr>').join('')}
           <tr class="potrow"><td class="stk">Pot left</td><td class="gs-start" colspan="3">${rupees(d.pot)}</td>
             ${d.potLeft.map(x => `<td class="gs-start" colspan="4">${rupees(x)}</td>`).join('')}</tr></tbody>
-        </table></div>${d.steps ? '' : '<p class="share-note">No drop can be taken without leaving one entry or less in the pot.</p>'}${notes}`;
+        </table></div>${notes}`;
     } else {
       $('shareResult').innerHTML = `<div class="share-scroll"><table class="shares">
         <thead><tr><th class="stk">Player</th><th class="sh">Share</th><th>Total</th><th>Drops</th><th>Pts left</th></tr></thead>
@@ -6716,16 +6715,6 @@
     }
   }
 
-  function shareText() {
-    const d = shareData(splitMethod);
-    const m = SPLIT_METHODS.find(x => x.id === splitMethod);
-    const head = `Rummy – shares (${m.name})\nPot ${rupees(d.pot)} (${d.buyIns} × ${rupees(d.share)} entry)\n`;
-    if (splitMethod === 'drops' && d.rows.length > 1) {
-      return head + Array.from({ length: d.steps }, (_, k) => `\nSplit after drop ${k + 1}: ` +
-        d.rows.map(r => `${r.p.name} ${rupees(r.cum[k])}`).join(', ') + ` · pot left ${rupees(d.potLeft[k])}`).join('');
-    }
-    return head + d.rows.map(r => `${r.p.name}: ${rupees(r.amount)} (${r.drops} drop${r.drops === 1 ? '' : 's'} left)`).join('\n');
-  }
 
   $('btnShares').addEventListener('click', toggleShares);
   $('splitOpts').addEventListener('change', e => {
@@ -6740,11 +6729,6 @@
     const id = info.dataset.soinfo;
     if (openInfo.has(id)) openInfo.delete(id); else openInfo.add(id);
     renderShares();
-  });
-  $('shareWa').addEventListener('click', async () => {
-    const text = shareText();
-    if (navigator.share) { try { await navigator.share({ title: 'RummyTally – shares', text }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
-    window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener');
   });
 
   // Share amount: saved as it's typed (whole rupees, 1 or more; empty clears it)
