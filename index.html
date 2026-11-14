@@ -1601,6 +1601,10 @@
   .su-edit .su-rm { flex: 0 0 auto; min-height: 0; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: #f1f4f1; color: #8a9a90; display: inline-flex; align-items: center; justify-content: center; }
   .su-edit .su-rm:hover { background: var(--red-soft); color: var(--red); }
   .su-edit .su-rm .x-ico { width: 13px; height: 13px; }
+  .su-edit .su-mv { flex: 0 0 auto; min-height: 0; width: 26px; height: 30px; padding: 0; border: 0; background: none; color: var(--felt); display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; }
+  .su-edit .su-mv:hover:not(:disabled) { background: var(--primary-soft); }
+  .su-edit .su-mv:disabled { color: #c9d3cc; }
+  .su-edit li { gap: 4px; } .su-edit li::before { margin-right: 4px; }
   .su-players .su-pt label:has(input:checked) { border: 0; background: none; }
   /* New Game is a page of its own, not a pop-up card */
   body.scr-setup .setup-card { margin: 0 -16px !important; border-radius: 22px 22px 0 0 !important; box-shadow: none; min-height: calc(100vh - 64px); min-height: calc(100dvh - 64px); padding-bottom: 28px; }
@@ -1932,6 +1936,8 @@
 <script>
 (function () {
   'use strict';
+  const I_UP = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const I_DOWN = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const I_X = '<svg class="x-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>';   // the one close symbol
 
   /* ---------- Background suit pattern ---------- */
@@ -3350,6 +3356,8 @@
           <label><input type="radio" name="suPlayers" value="new" id="suNew" ${useOld ? '' : 'checked'}><span>New</span></label></div>
         ${useOld ? `${fromSelectHtml() ? `<div class="su-from-row">${fromSelectHtml()}</div>` : ''}
         <ol class="su-edit">${prev.map((p, i) => `<li><input type="text" id="suPE${i}" class="su-pe" data-pi="${i}" maxlength="30" value="${esc(p.name)}" aria-label="Player ${i + 1}" autocomplete="off">
+          <button type="button" class="su-mv" data-su="mvprev" data-i="${i}" data-d="-1" aria-label="Move ${esc(p.name)} up" ${i === 0 ? 'disabled' : ''}>${I_UP}</button>
+          <button type="button" class="su-mv" data-su="mvprev" data-i="${i}" data-d="1" aria-label="Move ${esc(p.name)} down" ${i === prev.length - 1 ? 'disabled' : ''}>${I_DOWN}</button>
           <button type="button" class="su-rm" data-su="rmprev" data-i="${i}" aria-label="Remove ${esc(p.name)}">${I_X}</button></li>`).join('')}</ol>` : ''}` : '';
     const chips = setup.added.length ? `<div class="su-chips">${setup.added.map((n, i) => `<span class="su-chip">${esc(n)}<button type="button" data-su="rmplayer" data-i="${i}" aria-label="Remove ${esc(n)}">${I_X}</button></span>`).join('')}</div>` : '';
     const addArea = !setup.addOpen && !(setup.added.length && !useOld)
@@ -3534,6 +3542,14 @@
     else if (a === 'addplayer') addSetupPlayer();
     else if (a === 'showprev') { setup.showPrev = !setup.showPrev; renderSetup(); }
     else if (a === 'openadd') { setup.addOpen = true; renderSetup(); $('suPlayerName').focus(); }
+    else if (a === 'mvprev') {
+      const i = +t.dataset.i, j = i + (+t.dataset.d), L = setup.prevPlayers;
+      if (j < 0 || j >= L.length) return;
+      [L[i], L[j]] = [L[j], L[i]];
+      renderSetup();
+      const b = document.querySelector(`[data-su="mvprev"][data-i="${j}"][data-d="${t.dataset.d}"]`);
+      if (b && !b.disabled) b.focus();   // keep moving the same player with repeated taps
+    }
     else if (a === 'rmprev') { setup.prevPlayers.splice(+t.dataset.i, 1); renderSetup(); }
     else if (a === 'rmplayer') { setup.added.splice(+t.dataset.i, 1); renderSetup(); }
     else if (a === 'fromopen') { setup.fromOpen = !setup.fromOpen; renderSetup(); }
