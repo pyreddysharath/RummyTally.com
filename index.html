@@ -1601,6 +1601,15 @@
   .su-edit .su-rm { flex: 0 0 auto; min-height: 0; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: #f1f4f1; color: #8a9a90; display: inline-flex; align-items: center; justify-content: center; }
   .su-edit .su-rm:hover { background: var(--red-soft); color: var(--red); }
   .su-edit .su-rm .x-ico { width: 13px; height: 13px; }
+  .su-order-l { display: inline-flex; margin: 0 0 6px; font-size: .82rem; }
+  .so-tip { font-size: .8rem; color: var(--felt); background: var(--primary-soft); border-radius: 10px; padding: 7px 12px; margin: 0 0 8px; }
+  .so-list { display: flex; flex-direction: column; gap: 6px; margin: 0 0 10px; }
+  .so-row { min-height: 0; display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 1.5px solid #e1e9e2; border-radius: 12px; background: #fff; color: var(--text); font: inherit; font-size: .9rem; text-align: left; }
+  .so-row.done { background: #f5f8f4; border-color: #cfe2d5; }
+  .so-b { width: 26px; height: 26px; border-radius: 50%; border: 1.5px dashed #b9c7bd; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: .8rem; flex: 0 0 auto; }
+  .so-row.done .so-b { background: var(--felt); border: 0; color: #fff; }
+  .so-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 8px; }
+  .so-btns button { min-height: 0; padding: 9px; }
   .su-edit .su-mv { flex: 0 0 auto; min-height: 0; width: 26px; height: 30px; padding: 0; border: 0; background: none; color: var(--felt); display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; }
   .su-edit .su-mv:hover:not(:disabled) { background: var(--primary-soft); }
   .su-edit .su-mv:disabled { color: #c9d3cc; }
@@ -3253,7 +3262,15 @@
     if (!c || !setup) return;
     setup.from = key; setup.fromPicked = !!byHand;
     setup.prevPlayers = c.players.map(p => ({ ...p }));
-    setup.useExisting = true; setup.prevAvail = true;
+    setup.useExisting = true; setup.prevAvail = true; setup.ordering = false;
+  }
+  // Seating order: tap the players in the order they sit; the untapped ones follow in their current order
+  function orderHtml(prev) {
+    const taps = setup.orderTaps || [];
+    return `<div class="so-tip">Tap players in seating order</div>
+      <div class="so-list">${prev.map((p, i) => { const n = taps.indexOf(i) + 1;
+        return `<button type="button" class="so-row ${n ? 'done' : ''}" data-su="taporder" data-i="${i}" aria-pressed="${!!n}"><span class="so-b">${n || ''}</span><span class="so-n">${esc(p.name)}</span></button>`; }).join('')}</div>
+      <div class="so-btns"><button type="button" class="btn-outline" data-su="orderreset">Reset</button><button type="button" class="btn-primary" data-su="orderdone">Done</button></div>`;
   }
   function fromSelectHtml() {
     if (!FB_CFG) return '';
@@ -3355,12 +3372,11 @@
           <label><input type="radio" name="suPlayers" value="existing" id="suExisting" ${useOld ? 'checked' : ''}><span>Existing <span class="su-count">${prev.length}</span></span></label>
           <label><input type="radio" name="suPlayers" value="new" id="suNew" ${useOld ? '' : 'checked'}><span>New</span></label></div>
         ${useOld ? `${fromSelectHtml() ? `<div class="su-from-row">${fromSelectHtml()}</div>` : ''}
+        ${setup.ordering ? orderHtml(prev) : `${prev.length > 1 ? '<button type="button" class="su-link plain su-order-l" data-su="orderstart">⇅ Set seating order</button>' : ''}
         <ol class="su-edit">${prev.map((p, i) => `<li><input type="text" id="suPE${i}" class="su-pe" data-pi="${i}" maxlength="30" value="${esc(p.name)}" aria-label="Player ${i + 1}" autocomplete="off">
-          <button type="button" class="su-mv" data-su="mvprev" data-i="${i}" data-d="-1" aria-label="Move ${esc(p.name)} up" ${i === 0 ? 'disabled' : ''}>${I_UP}</button>
-          <button type="button" class="su-mv" data-su="mvprev" data-i="${i}" data-d="1" aria-label="Move ${esc(p.name)} down" ${i === prev.length - 1 ? 'disabled' : ''}>${I_DOWN}</button>
-          <button type="button" class="su-rm" data-su="rmprev" data-i="${i}" aria-label="Remove ${esc(p.name)}">${I_X}</button></li>`).join('')}</ol>` : ''}` : '';
+          <button type="button" class="su-rm" data-su="rmprev" data-i="${i}" aria-label="Remove ${esc(p.name)}">${I_X}</button></li>`).join('')}</ol>`}` : ''}` : '';
     const chips = setup.added.length ? `<div class="su-chips">${setup.added.map((n, i) => `<span class="su-chip">${esc(n)}<button type="button" data-su="rmplayer" data-i="${i}" aria-label="Remove ${esc(n)}">${I_X}</button></span>`).join('')}</div>` : '';
-    const addArea = !setup.addOpen && !(setup.added.length && !useOld)
+    const addArea = setup.ordering && useOld ? '' : !setup.addOpen && !(setup.added.length && !useOld)
       ? `<button class="add-open su-addopen" type="button" data-su="openadd"><span class="plus" aria-hidden="true">+</span>${useOld ? 'Add player' : 'Add players'}</button>${useOld ? chips : ''}`
       : `<div class="su-add"><input type="text" id="suPlayerName" maxlength="30" placeholder="${useOld ? 'New player name' : 'Player name'}" autocomplete="off" enterkeyhint="done">
         <button type="button" class="btn-outline" data-su="addplayer">＋ Add</button></div>${chips}`;
@@ -3542,6 +3558,19 @@
     else if (a === 'addplayer') addSetupPlayer();
     else if (a === 'showprev') { setup.showPrev = !setup.showPrev; renderSetup(); }
     else if (a === 'openadd') { setup.addOpen = true; renderSetup(); $('suPlayerName').focus(); }
+    else if (a === 'orderstart') { setup.ordering = true; setup.orderTaps = []; setup.addOpen = false; renderSetup(); }
+    else if (a === 'taporder') {
+      const i = +t.dataset.i, T = setup.orderTaps, k = T.indexOf(i);
+      if (k >= 0) T.splice(k, 1); else T.push(i);   // tap again to undo
+      renderSetup();
+    }
+    else if (a === 'orderreset') { setup.orderTaps = []; renderSetup(); }
+    else if (a === 'orderdone') {
+      const L = setup.prevPlayers, T = setup.orderTaps || [];
+      setup.prevPlayers = T.map(i => L[i]).concat(L.filter((p, i) => !T.includes(i)));
+      setup.ordering = false; setup.orderTaps = [];
+      renderSetup();
+    }
     else if (a === 'mvprev') {
       const i = +t.dataset.i, j = i + (+t.dataset.d), L = setup.prevPlayers;
       if (j < 0 || j >= L.length) return;
