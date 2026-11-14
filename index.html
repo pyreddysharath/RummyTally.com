@@ -351,6 +351,9 @@
   .su-sh::before, #suSettingsSlot .settings-card > summary .ttl::before { content: ""; width: 4px; height: 16px; border-radius: 2px; background: var(--gold); flex: 0 0 auto; }
   .su-where .su-lbl { color: #2f5b8a; }
   .su-exist { display: flex; align-items: center; gap: 6px; }
+  .su-from { display: flex; align-items: center; gap: 8px; margin: 2px 0 8px 30px; }
+  .su-players .su-from label { display: inline; padding: 0; margin: 0; border: 0; background: none; box-shadow: none; min-height: 0; font-size: .8rem; font-weight: 700; color: #4a6b55; flex: 0 0 auto; }
+  .su-from select { flex: 1; min-width: 0; min-height: 0; padding: 7px 28px 7px 10px; border: 1.5px solid #c9dccf; border-radius: 9px; background: #fff; font: inherit; font-size: .86rem; font-weight: 600; color: var(--text); text-overflow: ellipsis; }
   .su-exist label { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; flex: 1; }
   .su-count { display: inline-block; min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--felt); color: #fff; font-size: .72rem; font-weight: 800; text-align: center; margin-left: 4px; }
   .su-exp { min-height: 0; width: 30px; height: 30px; border: 0; border-radius: 50%; background: #e3f1e9; position: relative; flex: 0 0 auto; }
@@ -1645,7 +1648,7 @@
         • Anyone with edit access can share; people who only watch can't. Only the owner can delete games or the room, rename the room, or delete a link with the <b>bin</b> beside it – only that link (View or Edit) stops working, nothing else is deleted – and make a new one with <b>＋ Make … link</b>.<br>
         • Links work for 1 year – the date is shown where you share them.</p></details>
       <details><summary>4. Calculate shares</summary><p>Set the <b>Entry or buy-in per player</b> in the Game Setup (New Game, or <b>⚙ Edit</b> on the Game Setup row under Scoreboard), then tap <b>₹ Calculate Shares</b> under the scoreboard and pick how to split the pot – the <b>i</b> next to each option explains it.</p></details>
-      <details><summary>5. My Rooms</summary><p>Tap <b>My Rooms</b> to see every room – newest first – with its games, oldest first. Tap <b>＋</b> to open a room, a game to see its scoreboard below, the share icon for its links, and the bin to delete a room or a game (you have 5 seconds to <b>Undo</b>). Deleting a room's last game deletes the room too. Under <b>Shared with me</b>, games shared one by one are grouped by room, 👁 marks watch-only, and the bin only removes them from your list. In a shared room, a bin beside a game means you made it – you can delete it. A room with no games left is deleted by itself.</p></details>
+      <details><summary>5. My Rooms</summary><p>Tap <b>My Rooms</b> to see every room – newest first – with its games, oldest first. Tap <b>＋</b> to open a room, a game to see its scoreboard below, the share icon for its links, and the bin to delete a room or a game (you have 5 seconds to <b>Undo</b>). Deleting a room's last game deletes the room too. Under <b>Shared with me</b>, games shared one by one are grouped by room, 👁 marks watch-only, and the bin only removes them from your list. A room with no games left is deleted by itself.</p></details>
       <details><summary>6. Keep your rooms</summary><p>As a guest, your rooms are kept in this browser only – clearing its site data or switching phones loses them. <b>Sign in with Google</b> from the menu (top right) and the rooms you created follow you to every device. Links others shared with you stay on the phone where you opened them.</p></details>
       <details><summary>7. When games are deleted</summary><p>The same for everyone: a game – finished or not – is deleted <b>1 year</b> after it was last played or changed, and a room once it has no games left. Shared links work for <b>1 year</b>; the owner can delete a link and make a new one any time.</p></details>
       <details><summary>8. Backups</summary><p><b>Export data</b> (in the menu) saves a file with your rooms and games. <b>Import Data</b> brings them back – rooms come back with new links.</p></details>
@@ -2961,7 +2964,7 @@
     return names.reduce((mx, n) => { const m = re.exec(String(n || '').trim()); return m ? Math.max(mx, +m[1]) : mx; }, 0);
   }
   function defaultRoomName() {
-    return `Room ${highestNum(Object.values(myRooms.rooms).map(e => e.name), 'Room') + 1}`;
+    return `Room ${highestNum(Object.values(myRooms.rooms).filter(e => e.role === 'owner').map(e => e.name), 'Room') + 1}`;   // my own rooms only
   }
   // Games started today in a room (known for the open room; otherwise what this device remembers)
   function gamesTodayIn(r) {
@@ -2985,6 +2988,69 @@
     } catch (e) { /* offline: keep the guess */ }
   }
 
+  /* ---------- New Game: copy the players of any game (rooms and games I have) ---------- */
+  const sharedGameDocs = {};   // single games shared with me: loaded for their players
+  function currentFromKey() { return online ? (online.gameId ? online.roomId + '_' + online.gameId : '') : (state.players.length ? 'local' : ''); }
+  // Every game I can see that has players: [{ key, group, label, ms, players }]
+  function fromChoices() {
+    const out = [], seen = new Set();
+    const add = (key, group, label, ms, players) => {
+      if (seen.has(key) || !players || !players.length) return;
+      seen.add(key); out.push({ key, group, label, ms: ms || 0, players: players.map(p => ({ id: p.id, name: p.name })) });
+    };
+    // the open game first, with its players as they are right now
+    const cur = currentFromKey();
+    if (cur && state.players.length) {
+      const own = !online || (myRooms.rooms[online.roomId] || {}).role === 'owner';
+      const gm = online && online.gameMeta;
+      const lbl = online ? `${(online.room && online.room.name) || (myRooms.games[cur] || {}).roomName || 'Room'} › ${gm ? gameTitle(gm.createdMs, gm.seq, state.gameName) : (state.gameName || 'Game')}` : (state.gameName || 'This game');
+      add(cur, own ? 'Mine' : 'Shared', lbl, gm ? gm.createdMs : Date.now(), state.players);
+    }
+    Object.entries(myRooms.rooms).filter(([r]) => !hiddenIds.has(r)).forEach(([r, e]) => {
+      (gamesOf(r) || []).forEach(x => add(r + '_' + x.id, e.role === 'owner' ? 'Mine' : 'Shared',
+        `${e.name || 'Room'} › ${gameTitle(x.createdMs, x.seq, x.gameName)}`, x.createdMs, x.players));
+    });
+    Object.entries(myRooms.games).filter(([id]) => !hiddenIds.has(id)).forEach(([id, e]) => {
+      const d = sharedGameDocs[id];
+      if (d) add(id, 'Shared', `${d.roomName || e.roomName || 'Room'} › ${gameTitle(d.createdMs, d.seq, d.gameName)}`, d.createdMs, d.players);
+    });
+    return out;
+  }
+  // Load the games of my rooms (and single shared games) so their players can be picked
+  async function loadFromChoices() {
+    if (!FB_CFG) return;
+    try { await cloudInit(); } catch (e) { return; }
+    const jobs = Object.keys(myRooms.rooms).filter(r => !isOpenRoom(r) && !otherRoomGames[r]).map(r => prefetchRoomGames(r));
+    Object.keys(myRooms.games).filter(id => !sharedGameDocs[id]).forEach(id => {
+      const [r, g] = [id.split('_')[0], id.slice(id.indexOf('_') + 1)];
+      jobs.push(fb.getDoc(R.game(r, g)).then(d => { if (d.exists()) sharedGameDocs[id] = d.data(); }).catch(() => {}));
+    });
+    await Promise.all(jobs);
+    if (!setup) return;
+    if (!setup.prevPlayers.length && !setup.fromPicked) {   // nothing open: start from the latest game
+      const first = fromChoices().sort((a, b) => b.ms - a.ms)[0];
+      if (first) pickFrom(first.key, false);
+    }
+    if (!(setup.listOpen || (document.activeElement && /^(suPlayerName|suRoomName|suGameName)$/.test(document.activeElement.id)))) renderSetup();
+  }
+  function pickFrom(key, byHand) {
+    const c = fromChoices().find(x => x.key === key);
+    if (!c || !setup) return;
+    setup.from = key; setup.fromPicked = !!byHand;
+    setup.prevPlayers = c.players.map(p => ({ ...p }));
+    setup.useExisting = true;
+  }
+  function fromSelectHtml() {
+    if (!FB_CFG) return '';
+    const list = fromChoices();
+    if (list.length < 2) return '';
+    const grp = g => list.filter(x => x.group === g).sort((a, b) => b.ms - a.ms)
+      .map(x => `<option value="${esc(x.key)}" ${x.key === setup.from ? 'selected' : ''}>${esc(x.label)}</option>`).join('');
+    const mine = grp('Mine'), shared = grp('Shared');
+    return `<div class="su-from"><label for="suFrom">From</label><select id="suFrom" aria-label="Copy the players of this game">
+      ${mine ? `<optgroup label="Mine">${mine}</optgroup>` : ''}${shared ? `<optgroup label="Shared">${shared}</optgroup>` : ''}</select></div>`;
+  }
+
   const settingsHome = document.createComment('settings');   // where Game Settings lives when not setting up
   function openSetup(mode) {
     if (online && !canEdit()) return;
@@ -2992,19 +3058,19 @@
     if (setup) return;   // already here
     leaveHome();
     if (page) closeRoomsPage();
-    // Inside a shared room, the next game goes there too; otherwise one of my own rooms
-    const hereRole = online && online.scope === 'room' && myRooms.rooms[online.roomId] ? myRooms.rooms[online.roomId].role : null;
-    const scope = hereRole === 'edit' ? 'shared' : 'mine';
-    const rooms = FB_CFG ? setupRooms(scope) : [];
+    // A new game always goes into one of my own rooms (the open one if it's mine)
+    const rooms = FB_CFG ? setupRooms('mine') : [];
     const here = online && online.scope === 'room' && rooms.some(x => x.id === online.roomId) ? online.roomId : null;
-    const newRoom = !!FB_CFG && scope === 'mine' && !rooms.length;   // no room of my own yet: this game starts one
+    const newRoom = !!FB_CFG && !rooms.length;   // no room of my own yet: this game starts one
     const roomId = newRoom ? null : (here || (rooms[0] || {}).id || null);
     setup = {
-      mode, scope, roomId, newRoom, roomName: defaultRoomName(), listOpen: false, search: '',
+      mode, scope: 'mine', roomId, newRoom, roomName: defaultRoomName(), listOpen: false, search: '',
       gameName: defaultGameName(roomId), gameNameEdited: false,
       useExisting: state.players.length > 0, prevPlayers: state.players.map(p => ({ id: p.id, name: p.name })),
+      from: currentFromKey(), fromPicked: false,
       added: [], busy: false
     };
+    loadFromChoices();
     // Game Settings moves into this section while setting up
     const sb = $('settingsBox');
     if (!settingsHome.parentNode) sb.parentNode.insertBefore(settingsHome, sb);
@@ -3047,20 +3113,11 @@
     // Each field: name on the left, the box on the right
     const line = (label, forId, body) => `<div class="su-line"><label class="su-lbl" ${forId ? `for="${forId}"` : ''}>${label}</label><div class="su-field">${body}</div></div>`;
     let roomStep = '';
-    // Mine / Shared: only when some room is shared with me with edit access
-    const scopeSeg = FB_CFG && setupRooms('shared').length ? `<div class="su-scope" role="radiogroup" aria-label="Which rooms">${[['mine', 'Mine'], ['shared', 'Shared']].map(([v, l]) =>
-      `<label><input type="radio" name="suScope" value="${v}" data-su="scope" ${setup.scope === v ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div>` : '';
     if (FB_CFG) {
       if (setup.newRoom) {
         roomStep = line('Room', 'suRoomName', `<input type="text" id="suRoomName" maxlength="40" value="${esc(setup.roomName)}" placeholder="e.g. Diwali at Ravi's" autocomplete="off">
           <p class="su-note">Name it after the occasion.</p>
           ${rooms.length ? '<button type="button" class="su-link" data-su="existing">Choose an existing room instead</button>' : ''}`);
-      } else if (setup.scope === 'shared') {
-        roomStep = line('Room', 'suRoomSearch', `<div class="combo"><input type="text" id="suRoomSearch" autocomplete="off" role="combobox" aria-expanded="${setup.listOpen}" aria-controls="suRoomList"
-            placeholder="Search rooms" value="${setup.listOpen ? esc(setup.search) : sel ? esc(sel.name) : ''}"><span class="cb-chev"></span></div>
-          <ul class="combo-list" id="suRoomList" role="listbox" ${setup.listOpen ? '' : 'hidden'}></ul>
-          <p class="su-note">Shared by its owner – the game will be theirs; you can edit, share and reopen it.</p>
-          ${sel && !(online && online.roomId === sel.id) ? '<button type="button" class="su-link su-link2" data-su="continue">Continue this room\'s last game</button>' : ''}`);
       } else {
         roomStep = line('Room', 'suRoomSearch', `<div class="combo"><input type="text" id="suRoomSearch" autocomplete="off" role="combobox" aria-expanded="${setup.listOpen}" aria-controls="suRoomList"
             placeholder="Search rooms" value="${setup.listOpen ? esc(setup.search) : sel ? esc(sel.name) : ''}"><span class="cb-chev"></span></div>
@@ -3076,6 +3133,7 @@
     const radios = prev.length ? `<div class="su-radio su-exist"><label><input type="radio" name="suPlayers" value="existing" id="suExisting" ${useOld ? 'checked' : ''}>
           <span><b>Existing players</b> <span class="su-count">${prev.length}</span></span></label>
           <button type="button" class="su-exp ${setup.showPrev ? 'open' : ''}" data-su="showprev" aria-expanded="${!!setup.showPrev}" aria-label="${setup.showPrev ? 'Hide' : 'Show'} the players"></button></div>
+        ${fromSelectHtml()}
         ${setup.showPrev ? `<ol class="su-prev">${prev.map(p => `<li>${esc(p.name)}</li>`).join('')}</ol>` : ''}
         <label class="su-radio"><input type="radio" name="suPlayers" value="new" id="suNew" ${useOld ? '' : 'checked'}> <span><b>New players</b></span></label>` : '';
     const addArea = !setup.addOpen && !setup.added.length
@@ -3086,7 +3144,7 @@
     const playersStep = `<div class="su-sec su-players"><div class="su-sh">Players</div>${radios}${addArea}</div>`;
     const keepFocus = document.activeElement && document.activeElement.id;
     const caret = keepFocus && document.activeElement.selectionStart;
-    $('suBody').innerHTML = `<div class="su-sec su-where">${scopeSeg}${roomStep}${gameStep}</div>` + playersStep;
+    $('suBody').innerHTML = `<div class="su-sec su-where">${roomStep}${gameStep}</div>` + playersStep;
     renderRoomList();
     if (keepFocus && $(keepFocus) && keepFocus !== 'suRoomSearch') { const f = $(keepFocus); f.focus(); try { f.setSelectionRange(caret, caret); } catch (e) { /* ignore */ } }
     const ready = !FB_CFG || setup.newRoom || !!sel;
@@ -3254,16 +3312,6 @@
     else if (a === 'showprev') { setup.showPrev = !setup.showPrev; renderSetup(); }
     else if (a === 'openadd') { setup.addOpen = true; renderSetup(); $('suPlayerName').focus(); }
     else if (a === 'rmplayer') { setup.added.splice(+t.dataset.i, 1); renderSetup(); }
-    else if (a === 'scope') {
-      if (setup.scope === t.value) return;
-      setup.scope = t.value; setup.listOpen = false; setup.search = '';
-      const list = setupRooms();
-      setup.newRoom = setup.scope === 'mine' && !list.length;
-      setup.roomId = setup.newRoom ? null : (list[0] || {}).id || null;
-      if (!setup.gameNameEdited) setup.gameName = defaultGameName(setup.roomId);
-      renderSetup();
-      prefetchRoomGames(setup.roomId);
-    }
     else if (a === 'existing') { setup.newRoom = false; setup.roomId = (setupRooms()[0] || {}).id || null; if (!setup.gameNameEdited) setup.gameName = defaultGameName(setup.roomId); renderSetup(); }
     else if (a === 'newroom') { setup.newRoom = true; setup.listOpen = false; if (!setup.gameNameEdited) setup.gameName = defaultGameName(null); renderSetup(); setTimeout(() => { const f = $('suRoomName'); if (f) { f.focus(); f.select(); } }, 50); }
     else if (a === 'pickroom') {
@@ -3290,6 +3338,7 @@
   });
   $('setupCard').addEventListener('change', e => {
     if (e.target.name === 'suPlayers' && setup) { setup.useExisting = e.target.value === 'existing'; renderSetup(); }
+    if (e.target.id === 'suFrom' && setup) { pickFrom(e.target.value, true); renderSetup(); }
   });
   $('setupCard').addEventListener('keydown', e => {
     if (e.key === 'Enter' && e.target.id === 'suPlayerName') { e.preventDefault(); addSetupPlayer(); }
@@ -3747,7 +3796,7 @@
         return `<li class="${here ? 'here' : ''}"><button type="button" class="mg-name" data-mr="opengameof" data-id="${id}" data-g="${x.id}">${esc(gt)}${/\d{4}/.test(gt) ? '' : `<span class="mg-date">${fmtDMY(x.createdMs || Date.now())}</span>`}</button>
           ${x.status === 'ended' ? '<span class="mg-tag">Ended</span>' : ''}
           ${canShare ? `<button type="button" class="ico-btn share ${gameTool[id + '_' + x.id] ? 'on' : ''}" data-mr="glinks" data-id="${id}" data-g="${x.id}" title="Share this game" aria-label="Share this game">${I_SHARE}</button>` : ''}
-          ${own || madeByMe(x) ? `<button type="button" class="ico-btn del" data-mr="delgamein" data-id="${id}" data-g="${x.id}" title="Delete game" aria-label="Delete game">${I_TRASH}</button>` : ''}</li>
+          ${own ? `<button type="button" class="ico-btn del" data-mr="delgamein" data-id="${id}" data-g="${x.id}" title="Delete game" aria-label="Delete game">${I_TRASH}</button>` : ''}</li>
           ${gameTool[id + '_' + x.id] ? `<li class="mg-links"><div class="mr-tool lk-box" id="mgl-${id}_${x.id}">Loading…</div></li>` : ''}`;
       }).join('')}</ul>` : '<p class="mr-empty">None</p>')
       : '<p class="mr-empty">Loading…</p>';
@@ -5368,7 +5417,7 @@
   }
 
   async function onlineNewGame(keepPlayers, opts) {
-    if (!online || online.scope !== 'room' || !canEdit()) return;
+    if (!online || online.scope !== 'room' || !isOwner()) return;   // only the owner adds games to a room
     flushPush();
     const g = randKey(8), now = Date.now();
     const seq = roomGames.filter(x => sameDay(new Date(x.createdMs || 0), new Date(now))).length + 1;

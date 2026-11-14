@@ -78,8 +78,8 @@ service cloud.firestore {
       match /games/{g} {
         allow get: if canViewRoom(r) || gameEdit(r, g) || gameView(r, g);
         allow list: if canViewRoom(r);
-        // createdBy: who made the game (they may delete it, even in someone else's room)
-        allow create: if canEditRoom(r) && okExpiry(request.resource.data)
+        // Only the room's owner adds games (createdBy: who made it)
+        allow create: if isRoomOwner(r) && okExpiry(request.resource.data)
                       && request.resource.data.get('createdBy', uid()) == uid();
         // Owners and editors change games – also an ended one, e.g. to reopen it; nobody changes who made it
         allow update: if okExpiry(request.resource.data) && (isRoomOwner(r) || canEditRoom(r) || gameEdit(r, g))
