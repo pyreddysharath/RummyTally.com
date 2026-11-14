@@ -124,7 +124,7 @@
   .tb-menu { margin-left: auto; width: 32px; height: 32px; background: var(--gold); color: #2b1f00; box-shadow: 0 2px 6px rgba(0,0,0,.3); transition: transform .1s; }
   .tb-menu:active { transform: scale(.92); }
   .tb-menu svg { width: 18px; height: 18px; }
-  .tb-menu[aria-expanded="true"], .tb-menu.on { background: #fff; color: var(--felt); }   /* menu open, or a menu page showing */
+  .tb-menu[aria-expanded="true"] { background: #fff; color: var(--felt); }
   .tb-btn, .hb, .tile, .nv { -webkit-tap-highlight-color: transparent; }
   .tb-btn:focus, .tile:focus, .nv:focus { outline: none; }
   .tb-btn:focus-visible, .tile:focus-visible, .nv:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
@@ -3975,7 +3975,6 @@
     $('tbTitle').textContent = '';
     $('tbTitle').hidden = true;
     const brand = !home;
-    $('btnMenu').classList.toggle('on', info);   // stays highlighted while a menu page is open; tap it to close the page
     $('tbNav').hidden = true;
     $('tbBrand').hidden = !brand;
     $('btnRoomsNav').hidden = !FB_CFG;
@@ -4305,11 +4304,6 @@
   $('btnMenu').addEventListener('click', e => {
     e.stopPropagation();
     if (!$('appMenu').hidden) { closeMenu(); return; }
-    // A page opened from the menu (How it works, Feedback, Privacy) is open: the menu button closes it
-    if (page && page !== 'rooms') {
-      if (infoOver) { try { history.back(); } catch (err) { closeInfoPage(); } } else goHome();
-      return;
-    }
     renderMenu();
     $('appMenu').hidden = false;
     $('btnMenu').setAttribute('aria-expanded', 'true');
