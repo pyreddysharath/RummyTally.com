@@ -2671,6 +2671,14 @@
     renderBoard();
   }
   // Names are tidied when saved: each word starts with a capital, the rest small ("ravi KUMAR" → "Ravi Kumar")
+  // While typing: capital first letters, without trimming (so spaces can still be typed)
+  function liveCase(el) {
+    const v = el.value, w = v.toLowerCase().replace(/(^|[\s\-(])(\S)/g, (m, a, c) => a + c.toUpperCase());
+    if (w === v) return;
+    const a = el.selectionStart, b = el.selectionEnd;
+    el.value = w;
+    try { el.setSelectionRange(a, b); } catch (e) { /* ignore */ }
+  }
   function nameCase(v) {
     return String(v || '').trim().replace(/\s+/g, ' ').toLowerCase().replace(/(^|[\s\-(])(\S)/g, (m, a, c) => a + c.toUpperCase());
   }
@@ -3615,6 +3623,7 @@
     if (e.target.id === 'suRoomSearch') { setup.search = e.target.value; setup.listOpen = true; $('suRoomList').hidden = false; renderRoomList(); }
     if (e.target.id === 'suRoomName') setup.roomName = e.target.value;
     if (e.target.id === 'suGameName') { setup.gameName = e.target.value; setup.gameNameEdited = true; }
+    if (e.target.classList.contains('su-pe') || e.target.id === 'suPlayerName') liveCase(e.target);   // names in title case as you type
     if (e.target.classList.contains('su-pe')) { const p = setup.prevPlayers[+e.target.dataset.pi]; if (p) p.name = e.target.value; }
   });
   $('setupCard').addEventListener('change', e => {
