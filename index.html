@@ -352,8 +352,22 @@
   .su-where .su-lbl { color: #2f5b8a; }
   .su-exist { display: flex; align-items: center; gap: 6px; }
   .su-from { display: flex; align-items: center; gap: 8px; margin: 2px 0 8px 30px; }
-  .su-players .su-from label { display: inline; padding: 0; margin: 0; border: 0; background: none; box-shadow: none; min-height: 0; font-size: .8rem; font-weight: 700; color: #4a6b55; flex: 0 0 auto; }
-  .su-from select { flex: 1; min-width: 0; min-height: 0; padding: 7px 28px 7px 10px; border: 1.5px solid #c9dccf; border-radius: 9px; background: #fff; font: inherit; font-size: .86rem; font-weight: 600; color: var(--text); text-overflow: ellipsis; }
+  .su-from { position: relative; }
+  .su-from-l { font-size: .8rem; font-weight: 700; color: #4a6b55; flex: 0 0 auto; }
+  .su-from-btn { flex: 1; min-width: 0; min-height: 0; display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 10px;
+    border: 1.5px solid #c9dccf; border-radius: 9px; background: #fff; color: var(--text); font: inherit; font-size: .86rem; font-weight: 600; text-align: left; position: relative; }
+  .su-from-btn > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .su-from-btn .cb-chev { flex: 0 0 auto; width: 8px; height: 8px; margin: -4px 2px 0 0; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); }
+  .su-from-btn[aria-expanded="true"] .cb-chev { transform: rotate(-135deg); margin-top: 4px; }
+  .from-pop { position: absolute; z-index: 30; top: calc(100% + 4px); left: 0; right: 0; max-height: 320px; overflow-y: auto; background: #fff;
+    border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+  .fp-h { padding: 9px 14px 5px; font-size: .72rem; font-weight: 800; color: var(--felt); text-transform: uppercase; letter-spacing: .05em; background: #f1f6f2; }
+  .fp-o { display: flex; flex-direction: column; align-items: flex-start; width: 100%; min-height: 0; padding: 9px 34px 9px 14px; border: 0; border-top: 1px solid #eef1ee;
+    background: #fff; color: var(--text); font: inherit; font-size: .88rem; text-align: left; position: relative; border-radius: 0; }
+  .fp-o b { font-weight: 700; }
+  .fp-o small { color: #6b7c70; font-size: .74rem; margin-top: 2px; }
+  .fp-o.sel { background: #fdf3d6; }
+  .fp-o.sel::after { content: "✓"; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--felt); font-weight: 800; }
   .su-exist label { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; flex: 1; }
   .su-count { display: inline-block; min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--felt); color: #fff; font-size: .72rem; font-weight: 800; text-align: center; margin-left: 4px; }
   .su-exp { min-height: 0; width: 30px; height: 30px; border: 0; border-radius: 50%; background: #e3f1e9; position: relative; flex: 0 0 auto; }
@@ -2993,13 +3007,14 @@
   function currentFromKey() { return online ? (online.gameId ? online.roomId + '_' + online.gameId : '') : (state.players.length ? 'local' : ''); }
   // Every game I can see that has players: [{ key, group, label, ms, players }]
   function fromChoices() {
-    const out = [], seen = new Set();
+    const out = [], seen = new Set(), cur = currentFromKey();
     const add = (key, group, label, ms, players) => {
       if (seen.has(key) || !players || !players.length) return;
-      seen.add(key); out.push({ key, group, label, ms: ms || 0, players: players.map(p => ({ id: p.id, name: p.name })) });
+      const i = label.indexOf(' › ');
+      seen.add(key); out.push({ key, group, label, room: i > 0 ? label.slice(0, i) : '', game: i > 0 ? label.slice(i + 3) : label,
+        ms: ms || 0, last: key === cur, players: players.map(p => ({ id: p.id, name: p.name })) });
     };
     // the open game first, with its players as they are right now
-    const cur = currentFromKey();
     if (cur && state.players.length) {
       const own = !online || (myRooms.rooms[online.roomId] || {}).role === 'owner';
       const gm = online && online.gameMeta;
@@ -3044,12 +3059,17 @@
     if (!FB_CFG) return '';
     const list = fromChoices();
     if (list.length < 2) return '';
-    const grp = g => list.filter(x => x.group === g).sort((a, b) => b.ms - a.ms)
-      .map(x => `<option value="${esc(x.key)}" ${x.key === setup.from ? 'selected' : ''}>${esc(x.label)}</option>`).join('');
-    const mine = grp('Mine'), shared = grp('Shared');
-    return `<div class="su-from"><label for="suFrom">From</label><select id="suFrom" aria-label="Copy the players of this game">
-      ${mine ? `<optgroup label="Mine">${mine}</optgroup>` : ''}${shared ? `<optgroup label="Shared">${shared}</optgroup>` : ''}</select></div>`;
+    const sel = list.find(x => x.key === setup.from) || list[0];
+    const item = x => `<button type="button" class="fp-o ${x.key === sel.key ? 'sel' : ''}" role="option" aria-selected="${x.key === sel.key}" data-su="frompick" data-key="${esc(x.key)}">
+        <span class="fp-t">${x.room ? `<b>${esc(x.room)}</b> › ` : ''}${esc(x.game)}</span>
+        <small>${fmtDMY(x.ms || Date.now())} · ${x.players.length} player${x.players.length === 1 ? '' : 's'}${x.last ? ' · last played' : ''}</small></button>`;
+    const grp = (g, title) => { const xs = list.filter(x => x.group === g).sort((a, b) => b.ms - a.ms); return xs.length ? `<div class="fp-h">${title}</div>${xs.map(item).join('')}` : ''; };
+    return `<div class="su-from"><span class="su-from-l">From</span>
+      <button type="button" class="su-from-btn" data-su="fromopen" aria-haspopup="listbox" aria-expanded="${!!setup.fromOpen}">
+        <span>${sel.room ? `${esc(sel.room)} › ` : ''}${esc(sel.game)}</span><span class="cb-chev" aria-hidden="true"></span></button>
+      ${setup.fromOpen ? `<div class="from-pop" role="listbox" aria-label="Copy the players of">${grp('Mine', 'Mine')}${grp('Shared', 'Shared')}</div>` : ''}</div>`;
   }
+
 
   const settingsHome = document.createComment('settings');   // where Game Settings lives when not setting up
   function openSetup(mode) {
@@ -3312,6 +3332,8 @@
     else if (a === 'showprev') { setup.showPrev = !setup.showPrev; renderSetup(); }
     else if (a === 'openadd') { setup.addOpen = true; renderSetup(); $('suPlayerName').focus(); }
     else if (a === 'rmplayer') { setup.added.splice(+t.dataset.i, 1); renderSetup(); }
+    else if (a === 'fromopen') { setup.fromOpen = !setup.fromOpen; renderSetup(); }
+    else if (a === 'frompick') { pickFrom(t.dataset.key, true); setup.fromOpen = false; renderSetup(); }
     else if (a === 'existing') { setup.newRoom = false; setup.roomId = (setupRooms()[0] || {}).id || null; if (!setup.gameNameEdited) setup.gameName = defaultGameName(setup.roomId); renderSetup(); }
     else if (a === 'newroom') { setup.newRoom = true; setup.listOpen = false; if (!setup.gameNameEdited) setup.gameName = defaultGameName(null); renderSetup(); setTimeout(() => { const f = $('suRoomName'); if (f) { f.focus(); f.select(); } }, 50); }
     else if (a === 'pickroom') {
@@ -3338,15 +3360,17 @@
   });
   $('setupCard').addEventListener('change', e => {
     if (e.target.name === 'suPlayers' && setup) { setup.useExisting = e.target.value === 'existing'; renderSetup(); }
-    if (e.target.id === 'suFrom' && setup) { pickFrom(e.target.value, true); renderSetup(); }
+
   });
   $('setupCard').addEventListener('keydown', e => {
     if (e.key === 'Enter' && e.target.id === 'suPlayerName') { e.preventDefault(); addSetupPlayer(); }
     if (e.key === 'Escape' && setup && setup.listOpen) { setup.listOpen = false; renderSetup(); }
+    if (e.key === 'Escape' && setup && setup.fromOpen) { setup.fromOpen = false; renderSetup(); }
   });
   // Tapping outside the room list closes it
   document.addEventListener('click', e => {
     if (setup && setup.listOpen && !e.target.closest('.combo') && !e.target.closest('#suRoomList')) { setup.listOpen = false; renderSetup(); }
+    if (setup && setup.fromOpen && !e.target.closest('.su-from')) { setup.fromOpen = false; renderSetup(); }
   });
 
   // Who sees what: a brand-new visitor gets the welcome and the install button only
