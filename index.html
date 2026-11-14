@@ -3343,8 +3343,8 @@
           <button type="button" class="su-exp ${setup.showPrev ? 'open' : ''}" data-su="showprev" aria-expanded="${!!setup.showPrev}" aria-label="${setup.showPrev ? 'Hide' : 'Show'} the players"></button></div>
         ${setup.showPrev ? `<ol class="su-prev">${prev.map(p => `<li>${esc(p.name)}</li>`).join('')}</ol>` : ''}` : ''}` : '';
     const addArea = !setup.addOpen && !setup.added.length
-      ? `<button class="add-open su-addopen" type="button" data-su="openadd"><span class="plus" aria-hidden="true">+</span>${useOld ? 'Add another player' : 'Add players'}</button>`
-      : `<div class="su-add"><input type="text" id="suPlayerName" maxlength="30" placeholder="${useOld ? 'Add another player' : 'Player name'}" autocomplete="off" enterkeyhint="done">
+      ? `<button class="add-open su-addopen" type="button" data-su="openadd"><span class="plus" aria-hidden="true">+</span>${useOld ? 'Add more players' : 'Add players'}</button>`
+      : `<div class="su-add"><input type="text" id="suPlayerName" maxlength="30" placeholder="${useOld ? 'New player name' : 'Player name'}" autocomplete="off" enterkeyhint="done">
         <button type="button" class="btn-outline" data-su="addplayer">＋ Add</button></div>
       ${setup.added.length ? `<div class="su-chips">${setup.added.map((n, i) => `<span class="su-chip">${esc(n)}<button type="button" data-su="rmplayer" data-i="${i}" aria-label="Remove ${esc(n)}">${I_X}</button></span>`).join('')}</div>` : ''}`;
     const playersStep = `<div class="su-sec su-players"><div class="su-sh">Players</div>${radios}${addArea}</div>`;
