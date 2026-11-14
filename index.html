@@ -1601,7 +1601,11 @@
   .su-edit .su-rm { flex: 0 0 auto; min-height: 0; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: #f1f4f1; color: #8a9a90; display: inline-flex; align-items: center; justify-content: center; }
   .su-edit .su-rm:hover { background: var(--red-soft); color: var(--red); }
   .su-edit .su-rm .x-ico { width: 13px; height: 13px; }
-  .su-order-l { display: inline-flex; margin: 0 0 6px; font-size: .82rem; }
+  .so-live li::before { content: none; display: none; }
+  .so-live .so-b { cursor: pointer; padding: 0; min-height: 0; background: #fff; color: #9aa8a0; font: inherit; font-size: .8rem; font-weight: 600; }
+  .so-live .so-b.on { background: var(--felt); color: #fff; border: 0; }
+  .so-tip { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .so-reset { min-height: 0; padding: 2px 10px; border: 1px solid #b9d4c3; border-radius: 999px; background: #fff; color: var(--felt); font: inherit; font-size: .76rem; font-weight: 600; }
   .so-tip { font-size: .8rem; color: var(--felt); background: var(--primary-soft); border-radius: 10px; padding: 7px 12px; margin: 0 0 8px; }
   .so-list { display: flex; flex-direction: column; gap: 6px; margin: 0 0 10px; }
   .so-row { min-height: 0; display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 1.5px solid #e1e9e2; border-radius: 12px; background: #fff; color: var(--text); font: inherit; font-size: .9rem; text-align: left; }
@@ -3262,9 +3266,14 @@
     if (!c || !setup) return;
     setup.from = key; setup.fromPicked = !!byHand;
     setup.prevPlayers = c.players.map(p => ({ ...p }));
-    setup.useExisting = true; setup.prevAvail = true; setup.ordering = false;
+    setup.useExisting = true; setup.prevAvail = true; setup.ordering = false; setup.orderTaps = [];
   }
   // Seating order: tap the players in the order they sit; the untapped ones follow in their current order
+  function applyOrder() {   // tapped players first, in tap order; the rest keep their order
+    const L = setup.prevPlayers, T = setup.orderTaps || [];
+    setup.prevPlayers = T.map(i => L[i]).concat(L.filter((p, i) => !T.includes(i)));
+    setup.ordering = false; setup.orderTaps = [];
+  }
   function orderHtml(prev) {
     const taps = setup.orderTaps || [];
     return `<div class="so-tip">Tap players in seating order</div>
@@ -3372,11 +3381,13 @@
           <label><input type="radio" name="suPlayers" value="existing" id="suExisting" ${useOld ? 'checked' : ''}><span>Existing <span class="su-count">${prev.length}</span></span></label>
           <label><input type="radio" name="suPlayers" value="new" id="suNew" ${useOld ? '' : 'checked'}><span>New</span></label></div>
         ${useOld ? `${fromSelectHtml() ? `<div class="su-from-row">${fromSelectHtml()}</div>` : ''}
-        ${setup.ordering ? orderHtml(prev) : `${prev.length > 1 ? '<button type="button" class="su-link plain su-order-l" data-su="orderstart">⇅ Set seating order</button>' : ''}
-        <ol class="su-edit">${prev.map((p, i) => `<li><input type="text" id="suPE${i}" class="su-pe" data-pi="${i}" maxlength="30" value="${esc(p.name)}" aria-label="Player ${i + 1}" autocomplete="off">
-          <button type="button" class="su-rm" data-su="rmprev" data-i="${i}" aria-label="Remove ${esc(p.name)}">${I_X}</button></li>`).join('')}</ol>`}` : ''}` : '';
+        ${prev.length > 1 ? `<div class="so-tip"><span>Tap the circles in seating order</span>${(setup.orderTaps || []).length ? '<button type="button" class="so-reset" data-su="orderreset">Reset</button>' : ''}</div>` : ''}
+        <ol class="su-edit so-live">${prev.map((p, i) => { const n = (setup.orderTaps || []).indexOf(i) + 1;
+          return `<li><button type="button" class="so-b ${n ? 'on' : ''}" data-su="taporder" data-i="${i}" aria-pressed="${!!n}" aria-label="Seat ${n || i + 1}: ${esc(p.name)}">${n || ((setup.orderTaps || []).length ? '' : i + 1)}</button>
+          <input type="text" id="suPE${i}" class="su-pe" data-pi="${i}" maxlength="30" value="${esc(p.name)}" aria-label="Player ${i + 1}" autocomplete="off">
+          <button type="button" class="su-rm" data-su="rmprev" data-i="${i}" aria-label="Remove ${esc(p.name)}">${I_X}</button></li>`; }).join('')}</ol>` : ''}` : '';
     const chips = setup.added.length ? `<div class="su-chips">${setup.added.map((n, i) => `<span class="su-chip">${esc(n)}<button type="button" data-su="rmplayer" data-i="${i}" aria-label="Remove ${esc(n)}">${I_X}</button></span>`).join('')}</div>` : '';
-    const addArea = setup.ordering && useOld ? '' : !setup.addOpen && !(setup.added.length && !useOld)
+    const addArea = !setup.addOpen && !(setup.added.length && !useOld)
       ? `<button class="add-open su-addopen" type="button" data-su="openadd"><span class="plus" aria-hidden="true">+</span>${useOld ? 'Add player' : 'Add players'}</button>${useOld ? chips : ''}`
       : `<div class="su-add"><input type="text" id="suPlayerName" maxlength="30" placeholder="${useOld ? 'New player name' : 'Player name'}" autocomplete="off" enterkeyhint="done">
         <button type="button" class="btn-outline" data-su="addplayer">＋ Add</button></div>${chips}`;
@@ -3420,7 +3431,7 @@
     const taken = setup.added.concat(setup.useExisting ? setup.prevPlayers.map(p => p.name) : []).map(n => n.toLowerCase());
     if (taken.includes(name.toLowerCase())) { setMsg('suMsg', `"${name}" is already in the list.`, 'err'); f.select(); return; }
     setMsg('suMsg', '', '');
-    if (setup.useExisting && setup.prevAvail) setup.prevPlayers.push({ id: nextIdFor(setup.prevPlayers), name });
+    if (setup.useExisting && setup.prevAvail) { setup.prevPlayers.push({ id: nextIdFor(setup.prevPlayers), name }); setup.orderTaps = []; }
     else setup.added.push(name);
     f.value = '';
     renderSetup();
@@ -3460,6 +3471,7 @@
     }
     if ($('suPlayerName') && $('suPlayerName').value.trim()) addSetupPlayer();   // a typed name not yet added
     if (setup.useExisting) {
+      if ((setup.orderTaps || []).length) applyOrder();   // seats tapped so far go first
       setup.prevPlayers.forEach(p => { p.name = nameCase(p.name).slice(0, 30); });
       const blank = setup.prevPlayers.findIndex(p => !p.name);
       if (blank >= 0) { renderSetup(); setMsg('suMsg', `Player ${blank + 1} has no name – type one or tap ✕ to remove them.`, 'err'); try { $('suPE' + blank).focus(); } catch (e) { /* ignore */ } return; }
@@ -3560,17 +3572,14 @@
     else if (a === 'openadd') { setup.addOpen = true; renderSetup(); $('suPlayerName').focus(); }
     else if (a === 'orderstart') { setup.ordering = true; setup.orderTaps = []; setup.addOpen = false; renderSetup(); }
     else if (a === 'taporder') {
+      if (!setup.orderTaps) setup.orderTaps = [];
       const i = +t.dataset.i, T = setup.orderTaps, k = T.indexOf(i);
       if (k >= 0) T.splice(k, 1); else T.push(i);   // tap again to undo
+      if (T.length === setup.prevPlayers.length) { applyOrder(); toast('Seating order set'); }
       renderSetup();
     }
     else if (a === 'orderreset') { setup.orderTaps = []; renderSetup(); }
-    else if (a === 'orderdone') {
-      const L = setup.prevPlayers, T = setup.orderTaps || [];
-      setup.prevPlayers = T.map(i => L[i]).concat(L.filter((p, i) => !T.includes(i)));
-      setup.ordering = false; setup.orderTaps = [];
-      renderSetup();
-    }
+    else if (a === 'orderdone') { applyOrder(); renderSetup(); }
     else if (a === 'mvprev') {
       const i = +t.dataset.i, j = i + (+t.dataset.d), L = setup.prevPlayers;
       if (j < 0 || j >= L.length) return;
@@ -3579,7 +3588,7 @@
       const b = document.querySelector(`[data-su="mvprev"][data-i="${j}"][data-d="${t.dataset.d}"]`);
       if (b && !b.disabled) b.focus();   // keep moving the same player with repeated taps
     }
-    else if (a === 'rmprev') { setup.prevPlayers.splice(+t.dataset.i, 1); renderSetup(); }
+    else if (a === 'rmprev') { setup.prevPlayers.splice(+t.dataset.i, 1); setup.orderTaps = []; renderSetup(); }
     else if (a === 'rmplayer') { setup.added.splice(+t.dataset.i, 1); renderSetup(); }
     else if (a === 'fromopen') { setup.fromOpen = !setup.fromOpen; renderSetup(); }
     else if (a === 'frompick') { pickFrom(t.dataset.key, true); setup.fromOpen = false; renderSetup(); }
