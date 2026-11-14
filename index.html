@@ -124,7 +124,7 @@
   .tb-menu { margin-left: auto; width: 32px; height: 32px; background: var(--gold); color: #2b1f00; box-shadow: 0 2px 6px rgba(0,0,0,.3); transition: transform .1s; }
   .tb-menu:active { transform: scale(.92); }
   .tb-menu svg { width: 18px; height: 18px; }
-  .tb-menu[aria-expanded="true"] { background: #fff; color: var(--felt); }
+  .tb-menu[aria-expanded="true"], .tb-menu.on { background: #fff; color: var(--felt); }   /* menu open, or a menu page showing */
   .tb-btn, .hb, .tile, .nv { -webkit-tap-highlight-color: transparent; }
   .tb-btn:focus, .tile:focus, .nv:focus { outline: none; }
   .tb-btn:focus-visible, .tile:focus-visible, .nv:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
@@ -1641,6 +1641,14 @@
   .wm-big { font-weight: 700; letter-spacing: -.01em; }
   .tbb-name { font-weight: 700; letter-spacing: -.01em; }
   .welcome-card .wc-h b { font-weight: 700; }
+
+  /* Menu: deep green with white text and gold icons */
+  .app-menu { background: linear-gradient(180deg, #14603f, #0e4d33) !important; border-color: #0b3d2a !important; }
+  .app-menu .am-item { color: #f3f7f4; }
+  .app-menu .am-item:hover, .app-menu .am-item:focus-visible { background: rgba(255,255,255,.08); }
+  .app-menu .am-item svg, .app-menu .am-item .g { color: #f0c24a; }
+  .app-menu .am-item small { color: rgba(243,247,244,.7); }
+  .app-menu .am-sep { background: rgba(255,255,255,.18); }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -3967,6 +3975,7 @@
     $('tbTitle').textContent = '';
     $('tbTitle').hidden = true;
     const brand = !home;
+    $('btnMenu').classList.toggle('on', info);   // stays highlighted while a menu page is open; tap it to close the page
     $('tbNav').hidden = true;
     $('tbBrand').hidden = !brand;
     $('btnRoomsNav').hidden = !FB_CFG;
@@ -4296,6 +4305,11 @@
   $('btnMenu').addEventListener('click', e => {
     e.stopPropagation();
     if (!$('appMenu').hidden) { closeMenu(); return; }
+    // A page opened from the menu (How it works, Feedback, Privacy) is open: the menu button closes it
+    if (page && page !== 'rooms') {
+      if (infoOver) { try { history.back(); } catch (err) { closeInfoPage(); } } else goHome();
+      return;
+    }
     renderMenu();
     $('appMenu').hidden = false;
     $('btnMenu').setAttribute('aria-expanded', 'true');
