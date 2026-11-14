@@ -1593,6 +1593,14 @@
   .su-from-row .su-from { flex: 1; min-width: 0; margin: 0; }
   .su-from-n { flex: 1; color: var(--muted); }
   .su-prev { margin: 0 0 8px; }
+  /* Existing players: editable, ✕ removes from this new game */
+  .su-edit { list-style: none; counter-reset: pe; margin: 0 0 8px; padding: 0; }
+  .su-edit li { counter-increment: pe; display: flex; align-items: center; gap: 8px; margin: 0 0 6px; }
+  .su-edit li::before { content: counter(pe) "."; width: 18px; text-align: right; color: var(--felt); font-weight: 600; flex: 0 0 auto; }
+  .su-edit .su-pe { flex: 1; min-width: 0; min-height: 0; padding: 6px 10px; border-radius: 10px; font-size: .82rem; }
+  .su-edit .su-rm { flex: 0 0 auto; min-height: 0; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: #f1f4f1; color: #8a9a90; display: inline-flex; align-items: center; justify-content: center; }
+  .su-edit .su-rm:hover { background: var(--red-soft); color: var(--red); }
+  .su-edit .su-rm .x-ico { width: 13px; height: 13px; }
   .su-players .su-pt label:has(input:checked) { border: 0; background: none; }
   /* New Game is a page of its own, not a pop-up card */
   body.scr-setup .setup-card { margin: 0 -16px !important; border-radius: 22px 22px 0 0 !important; box-shadow: none; min-height: calc(100vh - 64px); min-height: calc(100dvh - 64px); padding-bottom: 28px; }
@@ -3239,7 +3247,7 @@
     if (!c || !setup) return;
     setup.from = key; setup.fromPicked = !!byHand;
     setup.prevPlayers = c.players.map(p => ({ ...p }));
-    setup.useExisting = true;
+    setup.useExisting = true; setup.prevAvail = true;
   }
   function fromSelectHtml() {
     if (!FB_CFG) return '';
@@ -3272,7 +3280,7 @@
     setup = {
       mode, scope: 'mine', roomId, newRoom, roomName: defaultRoomName(), listOpen: false, search: '',
       gameName: defaultGameName(roomId), gameNameEdited: false,
-      useExisting: state.players.length > 0, prevPlayers: state.players.map(p => ({ id: p.id, name: p.name })),
+      useExisting: state.players.length > 0, prevPlayers: state.players.map(p => ({ id: p.id, name: p.name })), prevAvail: state.players.length > 0,
       from: currentFromKey(), fromPicked: false,
       added: [], busy: false
     };
@@ -3336,17 +3344,18 @@
     const prev = setup.prevPlayers;
     const useOld = prev.length > 0 && setup.useExisting;
     // Existing players: one per line, numbered, folded by default (the chevron opens the list)
-    const radios = prev.length ? `<div class="su-pt" role="radiogroup" aria-label="Players">
+    // Existing: the copied players, each one editable with ✕ to drop them (only for this new game)
+    const radios = setup.prevAvail ? `<div class="su-pt" role="radiogroup" aria-label="Players">
           <label><input type="radio" name="suPlayers" value="existing" id="suExisting" ${useOld ? 'checked' : ''}><span>Existing <span class="su-count">${prev.length}</span></span></label>
           <label><input type="radio" name="suPlayers" value="new" id="suNew" ${useOld ? '' : 'checked'}><span>New</span></label></div>
-        ${useOld ? `<div class="su-from-row">${fromSelectHtml() || '<span class="su-from-n">' + prev.length + ' players</span>'}
-          <button type="button" class="su-exp ${setup.showPrev ? 'open' : ''}" data-su="showprev" aria-expanded="${!!setup.showPrev}" aria-label="${setup.showPrev ? 'Hide' : 'Show'} the players"></button></div>
-        ${setup.showPrev ? `<ol class="su-prev">${prev.map(p => `<li>${esc(p.name)}</li>`).join('')}</ol>` : ''}` : ''}` : '';
-    const addArea = !setup.addOpen && !setup.added.length
-      ? `<button class="add-open su-addopen" type="button" data-su="openadd"><span class="plus" aria-hidden="true">+</span>${useOld ? 'Add more players' : 'Add players'}</button>`
+        ${useOld ? `${fromSelectHtml() ? `<div class="su-from-row">${fromSelectHtml()}</div>` : ''}
+        <ol class="su-edit">${prev.map((p, i) => `<li><input type="text" id="suPE${i}" class="su-pe" data-pi="${i}" maxlength="30" value="${esc(p.name)}" aria-label="Player ${i + 1}" autocomplete="off">
+          <button type="button" class="su-rm" data-su="rmprev" data-i="${i}" aria-label="Remove ${esc(p.name)}">${I_X}</button></li>`).join('')}</ol>` : ''}` : '';
+    const chips = setup.added.length ? `<div class="su-chips">${setup.added.map((n, i) => `<span class="su-chip">${esc(n)}<button type="button" data-su="rmplayer" data-i="${i}" aria-label="Remove ${esc(n)}">${I_X}</button></span>`).join('')}</div>` : '';
+    const addArea = !setup.addOpen && !(setup.added.length && !useOld)
+      ? `<button class="add-open su-addopen" type="button" data-su="openadd"><span class="plus" aria-hidden="true">+</span>${useOld ? 'Add player' : 'Add players'}</button>${useOld ? chips : ''}`
       : `<div class="su-add"><input type="text" id="suPlayerName" maxlength="30" placeholder="${useOld ? 'New player name' : 'Player name'}" autocomplete="off" enterkeyhint="done">
-        <button type="button" class="btn-outline" data-su="addplayer">＋ Add</button></div>
-      ${setup.added.length ? `<div class="su-chips">${setup.added.map((n, i) => `<span class="su-chip">${esc(n)}<button type="button" data-su="rmplayer" data-i="${i}" aria-label="Remove ${esc(n)}">${I_X}</button></span>`).join('')}</div>` : ''}`;
+        <button type="button" class="btn-outline" data-su="addplayer">＋ Add</button></div>${chips}`;
     const playersStep = `<div class="su-sec su-players"><div class="su-sh">Players</div>${radios}${addArea}</div>`;
     const keepFocus = document.activeElement && document.activeElement.id;
     const caret = keepFocus && document.activeElement.selectionStart;
@@ -3387,7 +3396,8 @@
     const taken = setup.added.concat(setup.useExisting ? setup.prevPlayers.map(p => p.name) : []).map(n => n.toLowerCase());
     if (taken.includes(name.toLowerCase())) { setMsg('suMsg', `"${name}" is already in the list.`, 'err'); f.select(); return; }
     setMsg('suMsg', '', '');
-    setup.added.push(name);
+    if (setup.useExisting && setup.prevAvail) setup.prevPlayers.push({ id: nextIdFor(setup.prevPlayers), name });
+    else setup.added.push(name);
     f.value = '';
     renderSetup();
     $('suPlayerName').focus();
@@ -3425,6 +3435,13 @@
       return;
     }
     if ($('suPlayerName') && $('suPlayerName').value.trim()) addSetupPlayer();   // a typed name not yet added
+    if (setup.useExisting) {
+      setup.prevPlayers.forEach(p => { p.name = nameCase(p.name).slice(0, 30); });
+      const blank = setup.prevPlayers.findIndex(p => !p.name);
+      if (blank >= 0) { renderSetup(); setMsg('suMsg', `Player ${blank + 1} has no name – type one or tap ✕ to remove them.`, 'err'); try { $('suPE' + blank).focus(); } catch (e) { /* ignore */ } return; }
+      const seen = new Set(), dup = setup.prevPlayers.concat(setup.added.map(n => ({ name: n }))).find(p => { const k = p.name.toLowerCase(); if (seen.has(k)) return true; seen.add(k); return false; });
+      if (dup) { renderSetup(); setMsg('suMsg', `"${dup.name}" is in the list twice.`, 'err'); return; }
+    }
     const keep = setup.useExisting && setup.prevPlayers.length > 0;
     let players = keep ? setup.prevPlayers.map(p => ({ ...p })) : [];
     let id = nextIdFor(players);
@@ -3517,6 +3534,7 @@
     else if (a === 'addplayer') addSetupPlayer();
     else if (a === 'showprev') { setup.showPrev = !setup.showPrev; renderSetup(); }
     else if (a === 'openadd') { setup.addOpen = true; renderSetup(); $('suPlayerName').focus(); }
+    else if (a === 'rmprev') { setup.prevPlayers.splice(+t.dataset.i, 1); renderSetup(); }
     else if (a === 'rmplayer') { setup.added.splice(+t.dataset.i, 1); renderSetup(); }
     else if (a === 'fromopen') { setup.fromOpen = !setup.fromOpen; renderSetup(); }
     else if (a === 'frompick') { pickFrom(t.dataset.key, true); setup.fromOpen = false; renderSetup(); }
@@ -3543,9 +3561,11 @@
     if (e.target.id === 'suRoomSearch') { setup.search = e.target.value; setup.listOpen = true; $('suRoomList').hidden = false; renderRoomList(); }
     if (e.target.id === 'suRoomName') setup.roomName = e.target.value;
     if (e.target.id === 'suGameName') { setup.gameName = e.target.value; setup.gameNameEdited = true; }
+    if (e.target.classList.contains('su-pe')) { const p = setup.prevPlayers[+e.target.dataset.pi]; if (p) p.name = e.target.value; }
   });
   $('setupCard').addEventListener('change', e => {
     if (e.target.name === 'suPlayers' && setup) { setup.useExisting = e.target.value === 'existing'; renderSetup(); }
+    if (e.target.classList.contains('su-pe') && setup) { const p = setup.prevPlayers[+e.target.dataset.pi]; if (p) { p.name = nameCase(e.target.value).slice(0, 30); e.target.value = p.name; } }
 
   });
   $('setupCard').addEventListener('keydown', e => {
