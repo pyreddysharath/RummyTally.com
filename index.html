@@ -981,6 +981,10 @@
   .board-card h2 #btnCloseBoard { width: 36px; height: 36px; margin: 0; display: inline-flex; align-items: center; justify-content: center; }
   .board-card h2 #btnCloseBoard .x-ico { width: 20px; height: 20px; }
   .board-card h2 .h2-btns { position: absolute; right: 0; top: 50%; transform: translateY(-50%); margin: 0; }
+  /* ✕ (My Rooms) sits in the card's top-right corner, clear of the heading's suits */
+  .board-card h2 .h2-btns { top: -18px; right: -12px; transform: none; }
+  .board-card h2 #btnCloseBoard { width: 28px; height: 28px; }
+  .board-card h2 #btnCloseBoard .x-ico { width: 16px; height: 16px; }
   .board-card h2 .ttl { min-width: 0; }
   #btnCloseBoard { margin: -6px -8px -6px 0; color: var(--muted); }
   /* One close symbol everywhere: a thin rounded ✕ drawn as an icon */
