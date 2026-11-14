@@ -3127,8 +3127,20 @@
     setMsg('declareMsg', '', '');
     $('endBox').hidden = false;
     $('btnEndGame').setAttribute('aria-expanded', 'true');
+    revealBelow($('btnEndGame'), $('endBox'));
   }
 
+  // After a panel opens under End Game / Calculate Shares: scroll so it can be seen,
+  // but never further than bringing the button itself to the top of the screen
+  function revealBelow(btn, panel) {
+    requestAnimationFrame(() => {
+      const b = btn.getBoundingClientRect(), p = panel.getBoundingClientRect();
+      const need = p.bottom - window.innerHeight + 12;   // how far the panel runs off the bottom
+      const most = b.top - 10;                           // the button reaching the top
+      const by = b.top < 0 ? most : Math.min(need, most);
+      if (by > 0 || b.top < 0) window.scrollBy({ top: by, behavior: 'smooth' });
+    });
+  }
   function closeDeclare() { $('endBox').hidden = true; $('btnEndGame').setAttribute('aria-expanded', 'false'); }
 
   function confirmDeclare() {
@@ -6652,6 +6664,7 @@
     box.hidden = false;
     $('btnShares').setAttribute('aria-expanded', 'true');
     renderShares();
+    revealBelow($('btnShares'), box);
   }
 
   // Redrawn whenever the board changes, so the split stays up to date
