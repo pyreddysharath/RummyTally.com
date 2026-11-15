@@ -1688,6 +1688,20 @@
 
   /* ⓘ boxes: warm cream with a gold edge, like the ⓘ button */
   .guide, .so-info { background: #fdf6e3 !important; border: 1px solid var(--gold) !important; }
+
+  /* Scoreboard header: Room › Game sized to its names, centred with the share button; setup row centred */
+  .sb-row1 { display: flex; justify-content: center; align-items: center; gap: 8px; min-width: 0; }
+  .sb-row1 .sb-strip, .sb-headrow .sb-row1 .sb-strip { margin-right: 0; flex: 0 1 auto; width: auto; min-width: 0; }
+  .sb-row1 .sb-editing, .sb-headrow .sb-row1 .sb-editing { margin-right: 0; flex: 1 1 auto; }
+  .sb-row1 .sb-strip .seg.room { flex: 0 10 auto; }   /* a long room name shortens first */
+  .sb-row1 .sb-strip .seg.game { flex: 0 0 auto; }
+  .sb-row1 .sb-acts { position: static; height: auto; flex: 0 0 auto; }
+  .sb-setup { justify-content: center; }
+  .sb-setup .sv { flex: 0 0 auto; }
+  .sb-setup .sb-setup-ed { margin-left: 0; width: 32px; height: 32px; padding: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
+  /* Save: gold, like Start */
+  table.board tfoot td.save-cell #btnSaveRound { background: linear-gradient(160deg, #f3cb5a, #dcac36); color: #2b1f00; border: 0; box-shadow: 0 2px 0 #b88d22; }
+  table.board tfoot td.save-cell #btnSaveRound:disabled { opacity: .55; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -2018,6 +2032,7 @@
 <script>
 (function () {
   'use strict';
+  const I_SLIDERS = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="17" r="2.2"/></svg>';
   const I_UP = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const I_DOWN = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const I_X = '<svg class="x-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>';   // the one close symbol
@@ -3798,23 +3813,25 @@
     } else gameFull = state.gameName || '';
     const m = /^\d{2}-[A-Za-z]{3}-\d{4} · (.+)$/.exec(gameFull);
     gameShort = m ? m[1] : gameFull;
+    html += '<div class="sb-row1">';   // the strip and the share button, centred together
     if (sbEdit === 'room') html += editor('Room', roomName, 40);
     else if (sbEdit === 'game') html += editor('Game', gameFull, 50);
     else {
       if (!roomName && !gameShort) gameShort = 'Game';
       html += `<div class="sb-strip" title="${esc([roomName, gameFull].filter(Boolean).join(' › '))}">`
-        + (roomName ? `<span class="seg room"><span aria-hidden="true">🏠</span><b>${esc(roomName)}</b>${canRoom ? pen('room', 'room') : ''}</span>` : '')
+        + (roomName ? `<span class="seg room"><b>${esc(roomName)}</b>${canRoom ? pen('room', 'room') : ''}</span>` : '')
         + (roomName && gameShort ? '<span class="sep" aria-hidden="true">›</span>' : '')
         + (gameShort ? `<span class="seg game"><b>${esc(gameShort)}</b>${canGame ? pen('game', 'game') : ''}</span>` : '')
         + '</div>';
     }
+    html += '</div>';
     // Game Setup in one row of small chips (swipe for the rest), with ⚙ Edit
     const st = state.settings;
     const canSetup = canEdit() && !isEnded();
     html += `<div class="sb-setup"><div class="sv" role="list" aria-label="Game Setup">`
       + `<span role="listitem" class="sv-limit"><small>Limit</small><b>${st.limit}</b></span>`
       + `<span role="listitem" class="sv-buy"><small>Buy-in</small><b>${st.share ? st.share.toLocaleString() : 'Not set'}</b></span></div>`
-      + (canSetup ? `<button type="button" class="sb-setup-ed ${rulesEditing ? 'on' : ''}" data-setupedit aria-expanded="${rulesEditing}">${I_GEAR_S} ${rulesEditing ? 'Close' : 'Edit'}</button>` : '')
+      + (canSetup ? `<button type="button" class="sb-setup-ed ${rulesEditing ? 'on' : ''}" data-setupedit aria-expanded="${rulesEditing}" title="${rulesEditing ? 'Close' : 'Edit'} Game Setup" aria-label="${rulesEditing ? 'Close' : 'Edit'} Game Setup">${I_SLIDERS}</button>` : '')
       + '</div>';
     // Chips: only what isn't visible elsewhere – Ended, and a warning when scores aren't reaching the server
     const chips = [];
@@ -3825,7 +3842,10 @@
       else if (stt === 'err') chips.push('<span class="sync err">⚠ Not saved – check internet</span>');
     }
     if (chips.length) html += `<div class="sb-chips">${chips.join('')}</div>`;
+    const acts = document.querySelector('.sb-acts');
+    if (acts && el.contains(acts)) el.parentNode.appendChild(acts);   // keep the share button while redrawing
     el.innerHTML = html;
+    if (acts && el.querySelector('.sb-row1')) el.querySelector('.sb-row1').appendChild(acts);
     if (typing && $('sbEdIn')) { $('sbEdIn').value = typing.v; if (typing.f) $('sbEdIn').focus(); }
     $('btnCloseBoard').hidden = page !== 'rooms';   // elsewhere the Back arrow closes the game
     const canShare = !!online || state.rounds.length > 0;
