@@ -1807,8 +1807,8 @@
   .mr-h2 { margin-top: 22px !important; }
 
   /* Pages run edge to edge, straight down to the bottom (no floating cards) */
-  .card.rooms-card { box-shadow: none !important; border: 0 !important; width: 100vw; max-width: none; margin: 0 0 0 calc(50% - 50vw) !important; padding: 18px 16px 24px !important; min-height: calc(100vh - 64px); min-height: calc(100dvh - 64px); }
-  body.page-info .app-footer { padding-top: 0 !important; padding-bottom: 0 !important; }
+  .card.rooms-card { box-shadow: none !important; border: 0 !important; width: 100vw; max-width: none; margin: 12px 0 0 calc(50% - 50vw) !important; padding: 18px 16px 24px !important; min-height: calc(100vh - 64px); min-height: calc(100dvh - 64px); }
+  body.page-info .app-footer { padding-top: 12px !important; padding-bottom: 0 !important; }
   body.page-info .ft-sec { box-shadow: none !important; width: 100vw; max-width: none; margin: 0 0 0 calc(50% - 50vw) !important; min-height: calc(100vh - 54px); min-height: calc(100dvh - 54px); }
   @media (min-width: 640px) {   /* wide screens: keep the page in the centre column */
     .card.rooms-card, body.page-info .ft-sec { width: auto; margin: 0 !important; }
@@ -1835,6 +1835,10 @@
   .board-card h2.sb-h { padding-top: 0 !important; margin: 0 0 15px !important; }
   .rooms-card > .ft-title + .mr-h { margin-top: 0 !important; }
   #ft-legal > .ft-title + .ft-subtabs { margin-top: 0; }
+
+  /* A little green space between the top bar and every page, like the menu pages */
+  body.scr-setup .setup-card { margin-top: 12px !important; }
+  .card.board-card { margin-top: 12px !important; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
