@@ -1757,6 +1757,17 @@
   .am-who b { display: block; font-weight: 600; }
   .am-who .am-mail { overflow-wrap: anywhere; opacity: .85; }
   .am-who .am-so { color: #f0c24a !important; margin-top: 2px; }
+
+  /* Scoreboard header: name pill + share, then Limit/Buy-in + Game Setup, in two lined-up columns */
+  .sb-hgrid { display: grid; grid-template-columns: minmax(0, max-content) auto; justify-content: center; align-items: center; column-gap: 8px; row-gap: 8px; }
+  .sb-hgrid > .sb-row1, .sb-hgrid > .sb-setup { display: contents; }
+  .sb-hgrid .sb-strip, .sb-hgrid .sb-editing { grid-column: 1; grid-row: 1; justify-content: center; }
+  .sb-hgrid .sb-acts { grid-column: 2; grid-row: 1; justify-self: center; }
+  .sb-hgrid .sv { grid-column: 1; grid-row: 2; }
+  .sb-hgrid .sv span { flex: 1 1 0; }
+  .sb-hgrid .sb-setup-ed { grid-column: 2; grid-row: 2; justify-self: center; }
+  /* Game Setup opened to view only (ended game or view access) */
+  body.rules-view .settings-card .settings-apply { display: none !important; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -1776,6 +1787,8 @@
         <button class="nv nv-rooms" id="btnRoomsNav" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11 12 4l8.5 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 9.5V20h4.5v-5.5h3V20H18V9.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>My Rooms</button>
       </div>
       <button class="tb-btn tb-menu" id="btnMenu" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="appMenu"></button>
+      <script>/* signed in before: show your photo on the menu button straight away, before the rest of the page loads */
+        try { const m = JSON.parse(localStorage.getItem('rummy-menu-ava') || 'null'); if (m && m.html) { const b = document.getElementById('btnMenu'); b.innerHTML = m.html; b.dataset.mb = m.html; b.title = m.title || 'Menu'; } } catch (e) { /* ignore */ }</script>
       <button id="btnMyRooms" type="button" hidden aria-hidden="true" tabindex="-1"></button>
     </div>
     <h1 class="wordmark" aria-label="RummyTally">
@@ -3827,14 +3840,14 @@
     $('btnImportData').hidden = fresh;
     $('backupLbl').hidden = $('btnExportData').hidden && $('btnImportData').hidden;
     document.body.classList.toggle('locked', isEnded());
-    if (isEnded() && rulesEditing) closeRulesEdit();
+    if (rulesEditing && rulesView !== (!canEdit() || isEnded())) closeRulesEdit();   // the game ended or reopened while it was open
     renderScreen();
     renderAccount();
     renderSbMeta();
   }
 
   // Room and game name under the Scoreboard title, with players, sync status, Game details and Share
-  let sbLinksOpen = false, detailsOpen = false, rulesEditing = false;
+  let sbLinksOpen = false, detailsOpen = false, rulesEditing = false, rulesView = false;
   // ✎ beside Room (owner) and Game (anyone who can edit) while the game is being played
   let sbEdit = null;   // 'room' | 'game' while renaming
   const I_GEAR_S = '<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path fill="currentColor" transform="translate(-1 0)" d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.4 7.4 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.4 7.4 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.4 7.4 0 0 0 1.7 1l.4 2.5h4l.4-2.5a7.4 7.4 0 0 0 1.7-1l2.4 1 2-3.4zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>';
@@ -3868,7 +3881,7 @@
     } else gameFull = state.gameName || '';
     const m = /^\d{2}-[A-Za-z]{3}-\d{4} · (.+)$/.exec(gameFull);
     gameShort = m ? m[1] : gameFull;
-    html += '<div class="sb-row1">';   // the strip and the share button, centred together
+    html += '<div class="sb-hgrid"><div class="sb-row1">';   // two lined-up rows: name pill + share, then Limit/Buy-in + Game Setup
     if (sbEdit === 'room') html += editor('Room', roomName, 40);
     else if (sbEdit === 'game') html += editor('Game', gameFull, 50);
     else {
@@ -3882,12 +3895,13 @@
     html += '</div>';
     // Game Setup in one row of small chips (swipe for the rest), with ⚙ Edit
     const st = state.settings;
-    const canSetup = canEdit() && !isEnded();
+    const canSetup = canEdit() && !isEnded();   // otherwise the button opens the Game Setup to view only
+    const gsLbl = rulesEditing ? 'Close Game Setup' : (canSetup ? 'Edit Game Setup' : 'View Game Setup');
     html += `<div class="sb-setup"><div class="sv" role="list" aria-label="Game Setup">`
       + `<span role="listitem" class="sv-limit"><small>Limit</small><b>${st.limit}</b></span>`
       + `<span role="listitem" class="sv-buy"><small>Buy-in</small><b>${st.share ? st.share.toLocaleString() : 'Not set'}</b></span></div>`
-      + (canSetup ? `<button type="button" class="sb-setup-ed ${rulesEditing ? 'on' : ''}" data-setupedit aria-expanded="${rulesEditing}" title="${rulesEditing ? 'Close' : 'Edit'} Game Setup" aria-label="${rulesEditing ? 'Close' : 'Edit'} Game Setup">${I_SLIDERS}</button>` : '')
-      + '</div>';
+      + `<button type="button" class="sb-setup-ed ${rulesEditing ? 'on' : ''}" data-setupedit aria-expanded="${rulesEditing}" title="${gsLbl}" aria-label="${gsLbl}">${I_SLIDERS}</button>`
+      + '</div></div>';
     // Chips: only what isn't visible elsewhere – Ended, and a warning when scores aren't reaching the server
     const chips = [];
     if (isEnded()) chips.push('<span class="ended">Ended</span>');
@@ -3939,8 +3953,10 @@
   }
   // ⚙ Edit on the Game Setup row: the Game Setup form opens just below it
   function openRulesEdit() {
-    if (!canEdit() || isEnded()) return;
     rulesEditing = true;
+    rulesView = !canEdit() || isEnded();   // view only: the values show but can't be changed
+    document.querySelector('#settingsBox .gsf').inert = rulesView;
+    document.body.classList.toggle('rules-view', rulesView);
     const box = $('setupEdit'), sb = $('settingsBox');
     box.hidden = false;
     box.innerHTML = '<div id="gdRules"></div>';
@@ -3954,6 +3970,9 @@
   function closeRulesEdit() {
     if (!rulesEditing) return;
     rulesEditing = false;
+    rulesView = false;
+    document.querySelector('#settingsBox .gsf').inert = false;
+    document.body.classList.remove('rules-view');
     const sb = $('settingsBox');
     if (settingsHome.parentNode) settingsHome.parentNode.insertBefore(sb, settingsHome);
     sb.open = false;
@@ -4477,9 +4496,10 @@
       html = avatarHtml() + '<span class="mb-badge" aria-hidden="true"><i></i></span>';
       title = `Menu – signed in as ${firstName()}`;
       try { localStorage.setItem(MB_KEY, JSON.stringify({ html, title })); } catch (e) { /* ignore */ }
+      if (!myRooms.signedIn) { myRooms.signedIn = true; saveRooms(); }   // so the next reload reconnects straight away
     } else {
       let saved = null;
-      if (!cloudUser && myRooms.signedIn) { try { saved = JSON.parse(localStorage.getItem(MB_KEY) || 'null'); } catch (e) { /* ignore */ } }
+      if (!cloudUser) { try { saved = JSON.parse(localStorage.getItem(MB_KEY) || 'null'); } catch (e) { /* ignore */ } }
       else { try { localStorage.removeItem(MB_KEY); } catch (e) { /* ignore */ } }
       html = saved ? saved.html : MI.menu; title = saved ? saved.title : 'Menu';
     }
@@ -6684,7 +6704,8 @@
       if (en) { try { await enterRoom(c.roomId, c.gameId, en.role, c.scope); } catch (e) { onCloudError(e); } return; }
     }
     // Signed in before on this device: load the account's rooms quietly
-    if (myRooms.signedIn || Object.values(myRooms.rooms).some(x => x.fromAccount)) { try { await cloudInit(); await loadAccountRooms(); renderRoomCard(); } catch (e) { /* offline */ } }
+    let hadAva = false; try { hadAva = !!localStorage.getItem(MB_KEY); } catch (e) { /* ignore */ }
+    if (myRooms.signedIn || hadAva || Object.values(myRooms.rooms).some(x => x.fromAccount)) { try { await cloudInit(); await loadAccountRooms(); renderRoomCard(); } catch (e) { /* offline */ } }
   }
 
   /* ---------- Export / import with checkboxes (this device + rooms) ---------- */
