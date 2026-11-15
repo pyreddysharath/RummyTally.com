@@ -4469,11 +4469,23 @@
     import: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7 9l5-5 5 5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     menu: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>'
   };
+  const MB_KEY = 'rummy-menu-ava';   // last signed-in button, shown straight away on reload while Google sign-in is restored
   function renderMenuButton() {
     const g = typeof isGoogle === 'function' && isGoogle();
-    const nm = g ? firstName() : '';
-    $('btnMenu').innerHTML = g ? avatarHtml() + '<span class="mb-badge" aria-hidden="true"><i></i></span>' : MI.menu;
-    $('btnMenu').title = g ? `Menu – signed in as ${nm}` : 'Menu';
+    let html, title;
+    if (g) {
+      html = avatarHtml() + '<span class="mb-badge" aria-hidden="true"><i></i></span>';
+      title = `Menu – signed in as ${firstName()}`;
+      try { localStorage.setItem(MB_KEY, JSON.stringify({ html, title })); } catch (e) { /* ignore */ }
+    } else {
+      let saved = null;
+      if (!cloudUser && myRooms.signedIn) { try { saved = JSON.parse(localStorage.getItem(MB_KEY) || 'null'); } catch (e) { /* ignore */ } }
+      else { try { localStorage.removeItem(MB_KEY); } catch (e) { /* ignore */ } }
+      html = saved ? saved.html : MI.menu; title = saved ? saved.title : 'Menu';
+    }
+    const b = $('btnMenu');
+    if (b.dataset.mb !== html) { b.innerHTML = html; b.dataset.mb = html; }   // same picture: leave it alone, so it doesn't blink
+    b.title = title;
   }
   function renderMenu() {
     const it = (act, icon, label, sub) => `<button type="button" class="am-item" role="menuitem" data-menu="${act}">${icon}<span>${label}${sub ? `<small>${sub}</small>` : ''}</span></button>`;
@@ -5456,7 +5468,7 @@
   function loadRooms() {
     try {
       const r = JSON.parse(localStorage.getItem(ROOMS_KEY));
-      if (r && typeof r === 'object') return { rooms: r.rooms || {}, games: r.games || {}, current: r.current || null };
+      if (r && typeof r === 'object') return { rooms: r.rooms || {}, games: r.games || {}, current: r.current || null, signedIn: !!r.signedIn };
     } catch (e) { /* ignore */ }
     return { rooms: {}, games: {}, current: null };
   }
