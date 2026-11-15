@@ -4024,7 +4024,7 @@
     renderPage();
     renderRooms();
     renderScreen();
-    requestAnimationFrame(() => window.scrollTo(0, infoScroll));   // back where you were
+    const y = infoScroll; setTimeout(() => window.scrollTo(0, y), 80);   // back where you were (after the page redraws)
   }
   function goHome(fromPop) {
     infoOver = false;
