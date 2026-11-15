@@ -1736,6 +1736,21 @@
   .hero-suits svg, .tb-brand .tbb-suits svg { overflow: visible; }
   .hero-suits .bk path, .tb-brand .tbb-suits .wh path { fill: #111; stroke: #f0c24a; stroke-width: 1.8px; paint-order: stroke; }
   .hero-suits .rd path, .tb-brand .tbb-suits .rd path { fill: #e0282e; stroke: #f0c24a; stroke-width: 1.8px; paint-order: stroke; }
+
+  /* Signed in: your photo (or initial) on the menu button with a small ≡ badge */
+  .tb-menu { position: relative; }
+  .tb-menu .ava.has-pic, .am-acct .ava.has-pic { padding: 0; overflow: hidden; background: #cfe0f2; }
+  .ava.has-pic img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
+  .tb-menu .ava.has-pic { box-shadow: 0 0 0 2px #f0c24a; }
+  .tb-menu .mb-badge { position: absolute; right: -4px; bottom: -4px; width: 16px; height: 16px; border-radius: 50%; background: var(--gold); border: 1.5px solid var(--felt-dark); display: flex; align-items: center; justify-content: center; }
+  .tb-menu .mb-badge i { display: block; width: 8px; height: 1.5px; background: #2b1f00; box-shadow: 0 -2.5px 0 #2b1f00, 0 2.5px 0 #2b1f00; }
+  /* Sign out asked inside the menu */
+  .am-out { background: rgba(224,40,46,.16); }
+  .am-out .am-item { cursor: default; }
+  .am-out-btns { display: flex; gap: 8px; padding: 0 14px 12px; }
+  .am-out-btns button { flex: 1; min-height: 0; padding: 7px; border-radius: 10px; font: inherit; font-size: .82rem; font-weight: 600; }
+  .am-no { background: none; border: 1px solid rgba(255,255,255,.4); color: #f3f7f4; }
+  .am-yes { background: #e0282e; border: 0; color: #fff; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -4450,8 +4465,8 @@
   };
   function renderMenuButton() {
     const g = typeof isGoogle === 'function' && isGoogle();
-    const nm = g ? (cloudUser.displayName || cloudUser.email || '?') : '';
-    $('btnMenu').innerHTML = g ? `<span class="ava">${esc(nm.trim().charAt(0).toUpperCase())}</span>` : MI.menu;
+    const nm = g ? firstName() : '';
+    $('btnMenu').innerHTML = g ? avatarHtml() + '<span class="mb-badge" aria-hidden="true"><i></i></span>' : MI.menu;
     $('btnMenu').title = g ? `Menu – signed in as ${nm}` : 'Menu';
   }
   function renderMenu() {
@@ -4465,14 +4480,18 @@
     if (tools.length) html += '<div class="am-sep"></div>' + tools.join('');
     if (FB_CFG) {
       const g = typeof isGoogle === 'function' && isGoogle();
-      const nm = g ? (cloudUser.displayName || cloudUser.email || '') : '';
+      const nm = g ? firstName() : '';
       html += '<div class="am-sep"></div>' + (g
-        ? `<button type="button" class="am-item am-acct" data-menu="signout"><span class="ava">${esc(nm.trim().charAt(0).toUpperCase())}</span><span>${esc(nm)}<small>Sign out</small></span></button>`
+        ? (menuAskOut
+          ? `<div class="am-out"><div class="am-item am-acct">${avatarHtml()}<span>Sign out?<small>Your rooms stay in your Google account</small></span></div>
+              <div class="am-out-btns"><button type="button" class="am-no" data-menu="outcancel">Cancel</button><button type="button" class="am-yes" data-menu="outyes">Sign out</button></div></div>`
+          : `<button type="button" class="am-item am-acct" data-menu="signout">${avatarHtml()}<span>${esc(nm)}<small>Sign out</small></span></button>`)
         : `<button type="button" class="am-item am-acct" data-menu="signin"><span class="g">${G_ICON}</span><span>Sign in with Google</span></button>`);
     }
     $('appMenu').innerHTML = html;
   }
-  function closeMenu() { $('appMenu').hidden = true; $('btnMenu').setAttribute('aria-expanded', 'false'); }
+  let menuAskOut = false;   // the menu is asking "Sign out?"
+  function closeMenu() { menuAskOut = false; $('appMenu').hidden = true; $('btnMenu').setAttribute('aria-expanded', 'false'); }
   $('btnMenu').addEventListener('click', e => {
     e.stopPropagation();
     if (!$('appMenu').hidden) { closeMenu(); return; }
@@ -4485,13 +4504,15 @@
     const b = e.target.closest('[data-menu]');
     if (!b) return;
     const a = b.dataset.menu;
+    if (a === 'signout') { menuAskOut = true; renderMenu(); return; }   // ask right here, no pop-up
+    if (a === 'outcancel') { menuAskOut = false; renderMenu(); return; }
     closeMenu();
+    if (a === 'outyes') { signOutGoogle(true).then(() => { renderAll(); renderMenuButton(); }); return; }
     if (a === 'rooms' || a === 'help' || a === 'feedback' || a === 'legal') openPage(a);
     else if (a === 'install') $('btnInstall').click();
     else if (a === 'export') $('btnExportData').click();
     else if (a === 'import') $('btnImportData').click();
     else if (a === 'signin') signInGoogle().then(() => { renderAll(); renderMenuButton(); });
-    else if (a === 'signout') signOutGoogle().then(() => { renderAll(); renderMenuButton(); });
   });
   document.addEventListener('click', () => { if (!$('appMenu').hidden) closeMenu(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeMenu(); } });
@@ -6279,20 +6300,25 @@
       const provider = new fb.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       try {
-        if (cloudUser && cloudUser.isAnonymous) cloudUser = (await fb.linkWithPopup(cloudUser, provider)).user;   // same user id: rooms stay yours
-        else cloudUser = (await fb.signInWithPopup(fb.auth, provider)).user;
+        let res;
+        if (cloudUser && cloudUser.isAnonymous) res = await fb.linkWithPopup(cloudUser, provider);   // same user id: rooms stay yours
+        else res = await fb.signInWithPopup(fb.auth, provider);
+        cloudUser = res.user;
+        rememberGivenName(res);
       } catch (e) {
         if (e && e.code === 'auth/credential-already-in-use') {
           // This Google account was used before on another device: switch to it and take the rooms along
           const cred = fb.GoogleAuthProvider.credentialFromError(e);
-          cloudUser = (await fb.signInWithCredential(fb.auth, cred)).user;
+          const res2 = await fb.signInWithCredential(fb.auth, cred);
+          cloudUser = res2.user;
+          rememberGivenName(res2);
           await reclaimAccess(true);
         } else throw e;
       }
       myRooms.signedIn = true;
       saveRooms();
       await loadAccountRooms();
-      toast(`Signed in as ${cloudUser.displayName || cloudUser.email || 'Google user'}`);
+      toast(`Signed in as ${firstName()}`);
       if (online) await enterRoom(online.roomId, online.scope === 'game' ? online.gameId : null, (online.scope === 'room' ? myRooms.rooms[online.roomId] : myRooms.games[online.roomId + '_' + online.gameId] || {}).role || online.role, online.scope);
       renderRoomCard();
     } catch (e) {
@@ -6304,9 +6330,32 @@
     }
   }
 
-  async function signOutGoogle() {
+  // The first name Google gives at sign-in (the full name can start with the surname)
+  const GIVEN_KEY = 'rummy-given-name';
+  function rememberGivenName(res) {
+    try {
+      const info = fb.getAdditionalUserInfo ? fb.getAdditionalUserInfo(res) : null;
+      const gn = info && info.profile && info.profile.given_name;
+      if (gn) localStorage.setItem(GIVEN_KEY, String(gn).slice(0, 40));
+    } catch (e) { /* ignore */ }
+  }
+  function firstName() {
+    let gn = ''; try { gn = localStorage.getItem(GIVEN_KEY) || ''; } catch (e) { /* ignore */ }
+    if (gn) return gn;
+    const dn = (cloudUser && (cloudUser.displayName || '')).trim();
+    return dn || (cloudUser && cloudUser.email) || 'Google user';
+  }
+  // Your Google photo (falls back to the gold initial if there is none or it doesn't load)
+  function avatarHtml() {
+    const nm = firstName(), ini = esc(nm.charAt(0).toUpperCase());
+    const url = cloudUser && cloudUser.photoURL;
+    return url ? `<span class="ava has-pic" data-ini="${ini}"><img src="${esc(url)}" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove('has-pic');this.parentNode.textContent=this.parentNode.dataset.ini"></span>`
+      : `<span class="ava">${ini}</span>`;
+  }
+  async function signOutGoogle(asked) {
     if (!fb) return;
-    if (!confirm('Sign out? Rooms you created while signed in stay in your Google account – sign in again to see them.')) return;
+    if (!asked && !confirm('Sign out? Your rooms stay in your Google account.')) return;
+    try { localStorage.removeItem(GIVEN_KEY); } catch (e) { /* ignore */ }
     try {
       Object.keys(myRooms.rooms).forEach(r => { if (myRooms.rooms[r].fromAccount && !(myRooms.rooms[r].keys || {}).owner) delete myRooms.rooms[r]; });
       saveRooms();
