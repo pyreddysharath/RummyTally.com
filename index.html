@@ -1751,6 +1751,12 @@
   .am-out-btns button { flex: 1; min-height: 0; padding: 7px; border-radius: 10px; font: inherit; font-size: .82rem; font-weight: 600; }
   .am-no { background: none; border: 1px solid rgba(255,255,255,.4); color: #f3f7f4; }
   .am-yes { background: #e0282e; border: 0; color: #fff; }
+
+  /* Signed-in account row: full name, email, Sign out */
+  .am-who { min-width: 0; }
+  .am-who b { display: block; font-weight: 600; }
+  .am-who .am-mail { overflow-wrap: anywhere; opacity: .85; }
+  .am-who .am-so { color: #f0c24a !important; margin-top: 2px; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -4485,7 +4491,7 @@
         ? (menuAskOut
           ? `<div class="am-out"><div class="am-item am-acct">${avatarHtml()}<span>Sign out?</span></div>
               <div class="am-out-btns"><button type="button" class="am-no" data-menu="outcancel">Cancel</button><button type="button" class="am-yes" data-menu="outyes">Sign out</button></div></div>`
-          : `<button type="button" class="am-item am-acct" data-menu="signout">${avatarHtml()}<span>${esc(nm)}<small>Sign out</small></span></button>`)
+          : `<button type="button" class="am-item am-acct" data-menu="signout">${avatarHtml()}<span class="am-who"><b>${esc(fullName())}</b>${userEmail() ? `<small class="am-mail">${esc(userEmail())}</small>` : ''}<small class="am-so">Sign out</small></span></button>`)
         : `<button type="button" class="am-item am-acct" data-menu="signin"><span class="g">${G_ICON}</span><span>Sign in with Google</span></button>`);
     }
     $('appMenu').innerHTML = html;
@@ -6318,7 +6324,6 @@
       myRooms.signedIn = true;
       saveRooms();
       await loadAccountRooms();
-      toast(`Signed in as ${firstName()}`);
       if (online) await enterRoom(online.roomId, online.scope === 'game' ? online.gameId : null, (online.scope === 'room' ? myRooms.rooms[online.roomId] : myRooms.games[online.roomId + '_' + online.gameId] || {}).role || online.role, online.scope);
       renderRoomCard();
     } catch (e) {
@@ -6341,6 +6346,8 @@
   }
   // A guest account later linked to Google keeps its empty name/photo; Google's own details sit in providerData
   function googleProfile() { return ((cloudUser && cloudUser.providerData) || []).find(p => p && p.providerId === 'google.com') || {}; }
+  function fullName() { const gp = googleProfile(); return ((cloudUser && (cloudUser.displayName || gp.displayName)) || '').trim() || firstName(); }
+  function userEmail() { return (cloudUser && (cloudUser.email || googleProfile().email)) || ''; }
   function firstName() {
     let gn = ''; try { gn = localStorage.getItem(GIVEN_KEY) || ''; } catch (e) { /* ignore */ }
     if (gn) return gn;
@@ -6368,7 +6375,6 @@
       await reclaimAccess(false);
       myRooms.signedIn = false;
       saveRooms();
-      toast('Signed out');
       renderRoomCard();
     } catch (e) { console.error(e); roomMsg('Sign-out didn\'t work. Please try again.', 'err'); }
   }
