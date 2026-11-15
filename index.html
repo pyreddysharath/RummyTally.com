@@ -94,7 +94,7 @@
   }
   .wm-small {
     color: var(--gold); font-weight: 800; font-size: 1.05rem; text-transform: uppercase;
-    margin-top: 4px; white-space: nowrap;   /* letter-spacing set in JS to match "Rummy" */
+    margin-top: 6px; white-space: nowrap;   /* letter-spacing set in JS (76% of the width of "Rummy") */
   }
   /* The four suits in their real colours, all the same size */
   .hero-suits { display: flex; justify-content: center; gap: 14px; margin: 8px 0 10px; }
@@ -2456,13 +2456,13 @@
     fitWordmark();
   }
 
-  // Stretch "Tally" with letter-spacing so it is exactly as wide as "Rummy"
+  // Stretch "Tally" with letter-spacing to 76% of the width of "Rummy", centred, so it stays clear of the y's tail
   function fitWordmark() {
     const big = $('wmBig'), small = $('wmSmall');
     if (!big.offsetParent) return;   // hidden (not on Home): fit it when Home shows
     small.style.letterSpacing = '0px';
     small.style.marginRight = '0px';
-    const target = big.getBoundingClientRect().width;
+    const target = big.getBoundingClientRect().width * 0.76;
     const natural = small.getBoundingClientRect().width;
     const chars = small.textContent.length;
     if (!target || !natural || !chars) return;
