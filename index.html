@@ -4483,7 +4483,7 @@
       const nm = g ? firstName() : '';
       html += '<div class="am-sep"></div>' + (g
         ? (menuAskOut
-          ? `<div class="am-out"><div class="am-item am-acct">${avatarHtml()}<span>Sign out?<small>Your rooms stay in your Google account</small></span></div>
+          ? `<div class="am-out"><div class="am-item am-acct">${avatarHtml()}<span>Sign out?</span></div>
               <div class="am-out-btns"><button type="button" class="am-no" data-menu="outcancel">Cancel</button><button type="button" class="am-yes" data-menu="outyes">Sign out</button></div></div>`
           : `<button type="button" class="am-item am-acct" data-menu="signout">${avatarHtml()}<span>${esc(nm)}<small>Sign out</small></span></button>`)
         : `<button type="button" class="am-item am-acct" data-menu="signin"><span class="g">${G_ICON}</span><span>Sign in with Google</span></button>`);
