@@ -94,11 +94,11 @@
   }
   .wm-small {
     color: var(--gold); font-weight: 800; font-size: 1.05rem; text-transform: uppercase;
-    margin-top: 6px; white-space: nowrap;   /* letter-spacing set in JS (76% of the width of "Rummy") */
+    margin-top: 0; white-space: nowrap;   /* letter-spacing set in JS (78% of the width of "Rummy") */
   }
   /* The four suits in their real colours, all the same size */
   .hero-suits { display: flex; justify-content: center; gap: 14px; margin: 8px 0 10px; }
-  .hero-suits svg { width: 16px; height: 16px; display: block; }
+  .hero-suits svg { width: 13px; height: 13px; display: block; }
   .hero-suits .bk { color: #111; }
   .hero-suits .rd { color: #e0282e; }
   /* Bottom: info chips on one row, New Game centred on the row below */
@@ -527,7 +527,7 @@
   .hero.compact { margin-bottom: 0; }
   .hero.compact .wordmark { margin: 0 0 8px; }
   .hero.compact .wm-big { font-size: 2.9rem; }
-  .hero.compact .wm-small { font-size: .95rem; margin-top: 3px; }
+  .hero.compact .wm-small { font-size: .95rem; margin-top: 0; }
   .foot-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 360px; margin: 6px auto 22px; padding: 0 12px; }
   .foot-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 0; padding: 8px 10px; }
   .foot-actions .fa-share { grid-column: 1 / -1; padding: 10px 12px; font-size: .95rem; }
@@ -2456,13 +2456,13 @@
     fitWordmark();
   }
 
-  // Stretch "Tally" with letter-spacing to 76% of the width of "Rummy", centred, so it stays clear of the y's tail
+  // Stretch "Tally" with letter-spacing to 78% of the width of "Rummy", centred, so it stays clear of the y's tail
   function fitWordmark() {
     const big = $('wmBig'), small = $('wmSmall');
     if (!big.offsetParent) return;   // hidden (not on Home): fit it when Home shows
     small.style.letterSpacing = '0px';
     small.style.marginRight = '0px';
-    const target = big.getBoundingClientRect().width * 0.76;
+    const target = big.getBoundingClientRect().width * 0.78;
     const natural = small.getBoundingClientRect().width;
     const chars = small.textContent.length;
     if (!target || !natural || !chars) return;
