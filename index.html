@@ -7099,17 +7099,34 @@
   }
   document.querySelectorAll('.ft-btn').forEach(b => b.addEventListener('click', () => showFooter(b.dataset.ft)));
 
-  /* ---------- Our Other Sites: read from the shared list on GitHub (the same file AyuBase6.com uses) ---------- */
-  const OS_URL = 'https://raw.githubusercontent.com/pyreddysharath/AyuBase6.com/main/config/OurOtherSites.json';
+  /* ---------- Our Other Sites: read from config/OurOtherSites.json in this site's GitHub repo (edit that file to change the list) ---------- */
+  const OS_URL = 'config/OurOtherSites.json';
   const OS_KEY = 'rummy-other-sites';   // last list fetched, used when offline
   const OS_FALLBACK = {
-    content: "A couple of other things we've built — feel free to drop by if any of these sound useful to you.",
-    sites: [
-      { site: 'BharatGaruda.com', url: 'https://bharatgaruda.com', information: "India's government sites aggregator — brings together official government links across every state and union territory of India, in one place." },
-      { site: 'IntiGuttu.com', url: 'https://intiguttu.com', information: 'A private, no-login home reference app — for household DIY fixes, everyday tips, and recipes from every state of India and country in the world.' },
-      { site: 'DataEkam.com', url: 'https://dataekam.com', information: "A single-page tool that formats, validates, and converts data across formats like JSON, YAML, XML, CSV, and more, plus a text comparison tab. Its name nods to 'Ekam' (Sanskrit for 'one') — one tool for handling many formats in one place." }
+    "content": "A couple of other things we've built — feel free to drop by if any of these sound useful to you.",
+    "sites": [
+      {
+        "site": "AyuBase6.com",
+        "url": "https://ayubase6.com",
+        "information": "A private, no-login daily health companion — nutrition, health calculators, reminders and routines, all kept on your own device."
+      },
+      {
+        "site": "BharatGaruda.com",
+        "url": "https://bharatgaruda.com",
+        "information": "India's government sites aggregator — brings together official government links across every state and union territory of India, in one place."
+      },
+      {
+        "site": "IntiGuttu.com",
+        "url": "https://intiguttu.com",
+        "information": "A private, no-login home reference app — for household DIY fixes, everyday tips, and recipes from every state of India and country in the world."
+      },
+      {
+        "site": "DataEkam.com",
+        "url": "https://dataekam.com",
+        "information": "A single-page tool that formats, validates, and converts data across formats like JSON, YAML, XML, CSV, and more, plus a text comparison tab. Its name nods to 'Ekam' (Sanskrit for 'one') — one tool for handling many formats in one place."
+      }
     ]
-  };
+  };   // same as the file, used if it can't be loaded
   function renderOtherSites(data) {
     const d = data && Array.isArray(data.sites) ? data : OS_FALLBACK;
     const host = u => { try { return new URL(u).hostname.replace(/^www\./, '').toLowerCase(); } catch (e) { return ''; } };
