@@ -3348,6 +3348,11 @@
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   function fmtDMY(ms) { const d = new Date(ms); return `${String(d.getDate()).padStart(2, '0')}-${MONTHS[d.getMonth()]}-${d.getFullYear()}`; }
   function nextIdFor(players) { return players.reduce((m, p) => Math.max(m, p.id), 0) + 1; }
+  // A single shared game whose whole room is also listed (with the same or more access) shows only inside that room
+  function coveredByRoom(id) {
+    const g = myRooms.games[id], r = myRooms.rooms[id.split('_')[0]];
+    return !!(g && r && !hiddenIds.has(id.split('_')[0]) && (ROLE_RANK[r.role] || 0) >= (ROLE_RANK[g.role] || 0));
+  }
   const roomCount = () => Object.keys(myRooms.rooms).filter(id => !hiddenIds.has(id)).length;
   // Rooms this device can start games in (not view-only), most recently used first
   // New Game's room list: my own rooms (Mine) or rooms shared with me with edit access (Shared)
@@ -3411,7 +3416,7 @@
       (gamesOf(r) || []).forEach(x => add(r + '_' + x.id, e.role === 'owner' ? 'Mine' : 'Shared',
         `${e.name || 'Room'} › ${gameTitle(x.createdMs, x.seq, x.gameName)}`, x.createdMs, x.players));
     });
-    Object.entries(myRooms.games).filter(([id]) => !hiddenIds.has(id)).forEach(([id, e]) => {
+    Object.entries(myRooms.games).filter(([id]) => !hiddenIds.has(id) && !coveredByRoom(id)).forEach(([id, e]) => {
       const d = sharedGameDocs[id];
       if (d) add(id, 'Shared', `${d.roomName || e.roomName || 'Room'} › ${gameTitle(d.createdMs, d.seq, d.gameName)}`, d.createdMs, d.players);
     });
@@ -4237,7 +4242,7 @@
     const keep = $('mrMsg') ? { t: $('mrMsg').textContent, c: $('mrMsg').className } : null;
     const newest = (a, b) => (b[1].createdMs || b[1].at || 0) - (a[1].createdMs || a[1].at || 0);   // latest first
     const all = Object.entries(myRooms.rooms).filter(([id]) => !hiddenIds.has(id)).sort(newest);
-    const games = Object.entries(myRooms.games).filter(([id]) => !hiddenIds.has(id)).sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
+    const games = Object.entries(myRooms.games).filter(([id]) => !hiddenIds.has(id) && !coveredByRoom(id)).sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
     const sec = ([id, e]) => {
       const own = e.role === 'owner', canShare = own || e.role === 'edit';
       return `<details class="mr-room" data-rid="${id}" ${roomsExpanded.has(id) ? 'open' : ''}>
@@ -6496,7 +6501,7 @@
 
   function offlineCardHtml() {
     const rooms = Object.entries(myRooms.rooms).filter(([id]) => !hiddenIds.has(id)).sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
-    const games = Object.entries(myRooms.games).filter(([id]) => !hiddenIds.has(id)).sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
+    const games = Object.entries(myRooms.games).filter(([id]) => !hiddenIds.has(id) && !coveredByRoom(id)).sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
     const list = rooms.map(([id, e]) => `<li><span class="rl-name">${esc(e.name || 'Room')}</span><span class="role-chip ${e.role}">${ROLE_LABEL[e.role] || ''}</span>
         <span class="rl-btns"><button type="button" class="btn-primary" data-room="open" data-id="${id}">Open</button>
         <button type="button" class="ricon del" data-room="forget" data-id="${id}" title="Remove from this device" aria-label="Remove ${esc(e.name || 'room')} from this device">${I_X}</button></span></li>`)
