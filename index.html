@@ -6339,16 +6339,19 @@
       if (gn) localStorage.setItem(GIVEN_KEY, String(gn).slice(0, 40));
     } catch (e) { /* ignore */ }
   }
+  // A guest account later linked to Google keeps its empty name/photo; Google's own details sit in providerData
+  function googleProfile() { return ((cloudUser && cloudUser.providerData) || []).find(p => p && p.providerId === 'google.com') || {}; }
   function firstName() {
     let gn = ''; try { gn = localStorage.getItem(GIVEN_KEY) || ''; } catch (e) { /* ignore */ }
     if (gn) return gn;
-    const dn = (cloudUser && (cloudUser.displayName || '')).trim();
+    const gp = googleProfile();
+    const dn = (cloudUser && (cloudUser.displayName || gp.displayName || '')).trim();
     return dn || (cloudUser && cloudUser.email) || 'Google user';
   }
   // Your Google photo (falls back to the gold initial if there is none or it doesn't load)
   function avatarHtml() {
     const nm = firstName(), ini = esc(nm.charAt(0).toUpperCase());
-    const url = cloudUser && cloudUser.photoURL;
+    const url = cloudUser && (cloudUser.photoURL || googleProfile().photoURL);
     return url ? `<span class="ava has-pic" data-ini="${ini}"><img src="${esc(url)}" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove('has-pic');this.parentNode.textContent=this.parentNode.dataset.ini"></span>`
       : `<span class="ava">${ini}</span>`;
   }
