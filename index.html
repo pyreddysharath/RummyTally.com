@@ -4160,12 +4160,13 @@
     document.querySelectorAll('.ft-sec').forEach(sec => { sec.hidden = true; });
   }
   // How it works / Feedback / Privacy open over New Game or a game; Back returns to it untouched
-  let infoOver = false, infoScroll = 0;
+  let infoOver = false, infoScroll = 0, infoFrom = null;   // infoFrom: 'rooms' when opened from My Rooms
   function openPage(name) {
     closeMenu();
-    const over = name !== 'rooms' && !page && curScreen() !== 'home';
-    if (over) { infoOver = true; infoScroll = window.scrollY; try { history.pushState({ rummyInfo: 1 }, ''); } catch (e) { /* ignore */ } }
-    else if (name === 'rooms') infoOver = false;
+    const fromRooms = name !== 'rooms' && page === 'rooms';
+    const over = name !== 'rooms' && ((!page && curScreen() !== 'home') || fromRooms);
+    if (over) { infoOver = true; infoFrom = fromRooms ? 'rooms' : null; infoScroll = window.scrollY; try { history.pushState({ rummyInfo: 1 }, ''); } catch (e) { /* ignore */ } }
+    else if (name === 'rooms') { infoOver = false; infoFrom = null; }
     if (setup && !infoOver) closeSetup();
     if (!infoOver) leaveHome();
     page = name;
@@ -4177,14 +4178,16 @@
   }
   function closeInfoPage() {
     infoOver = false;
+    const from = infoFrom; infoFrom = null;
     hidePage();
+    if (from === 'rooms') { page = 'rooms'; roomsOpen = true; }   // opened from My Rooms: back to My Rooms
     renderPage();
     renderRooms();
     renderScreen();
     const y = infoScroll; setTimeout(() => window.scrollTo(0, y), 80);   // back where you were (after the page redraws)
   }
   function goHome(fromPop) {
-    infoOver = false;
+    infoOver = false; infoFrom = null;
     closeMenu();
     hidePage();
     if (setup) closeSetup();
