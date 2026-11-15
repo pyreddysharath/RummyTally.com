@@ -1710,6 +1710,12 @@
   #suSettingsSlot .gs-i::before { content: ""; position: absolute; inset: -12px; }
 
   #suSettingsSlot .settings-card > summary { gap: 0 !important; }
+
+  /* SCOREBOARD heading: no suits, thin gold lines either side, room to breathe */
+  .sb-h .sbs { display: none; }
+  .board-card h2.sb-h { padding: 6px 0 0; margin-bottom: 14px; gap: 14px; }
+  .board-card h2.sb-h::before, .board-card h2.sb-h::after { content: ""; flex: 1; height: 1.5px; background: linear-gradient(90deg, transparent, var(--gold)); }
+  .board-card h2.sb-h::after { background: linear-gradient(90deg, var(--gold), transparent); }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
