@@ -3961,6 +3961,7 @@
     rulesEditing = true;
     rulesView = !canEdit() || isEnded();   // view only: the values show but can't be changed
     document.querySelector('#settingsBox .gsf').inert = rulesView;
+    $('setShare').placeholder = rulesView ? 'Not set' : 'e.g. 100';
     document.body.classList.toggle('rules-view', rulesView);
     const box = $('setupEdit'), sb = $('settingsBox');
     box.hidden = false;
@@ -3977,6 +3978,7 @@
     rulesEditing = false;
     rulesView = false;
     document.querySelector('#settingsBox .gsf').inert = false;
+    $('setShare').placeholder = 'e.g. 100';
     document.body.classList.remove('rules-view');
     const sb = $('settingsBox');
     if (settingsHome.parentNode) settingsHome.parentNode.insertBefore(sb, settingsHome);
@@ -6951,6 +6953,7 @@
     const box = $('shareBox');
     if (!box.hidden) { box.hidden = true; $('btnShares').setAttribute('aria-expanded', 'false'); return; }
     if (!state.settings.share) {
+      if (isEnded()) { setMsg('boardMsg', canEdit() ? 'Buy-in wasn\'t set for this game – reopen the game to set it.' : 'Buy-in wasn\'t set for this game.', 'err'); return; }
       if (!canEdit()) { setMsg('boardMsg', 'The entry amount isn\'t set yet – ask someone with the edit link to set it in the Game Setup.', 'err'); return; }
       openRulesEdit();   // take them to the field
       setMsg('shareMsg', 'Enter the entry or buy-in per player to calculate shares.', 'err');
