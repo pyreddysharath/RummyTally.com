@@ -1353,7 +1353,7 @@
   .rs-danger { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border); display: grid; gap: 4px; justify-items: start; }
   .del-room { color: var(--red); border-color: #f5b5b5; }
   /* View-only visitors: everything that changes the game is hidden */
-  body.readonly #btnNewGame, body.readonly #btnEndGame, body.readonly #endBox, body.readonly [data-editplayers], body.readonly table.board thead .hbtn,
+  body.readonly #btnEndGame, body.readonly #endBox, body.readonly [data-editplayers], body.readonly table.board thead .hbtn,
   body.readonly .settings-apply { display: none !important; }
   body.readonly .settings-card fieldset { pointer-events: none; opacity: .6; }
   /* Ended game: nothing can be changed until the owner reopens it */
@@ -3411,8 +3411,7 @@
 
   const settingsHome = document.createComment('settings');   // where Game Settings lives when not setting up
   function openSetup(mode) {
-    if (online && !canEdit()) return;
-    closeRulesEdit();
+    closeRulesEdit();   // anyone can start a game – it always goes into their own room
     if (setup) return;   // already here
     leaveHome();
     if (page) closeRoomsPage();
@@ -4073,7 +4072,7 @@
     $('btnNewGame').classList.toggle('on', !!setup);
     // Home: the big buttons, and a way back into the open game
     $('tileRooms').hidden = !FB_CFG;
-    $('tileNew').hidden = document.body.classList.contains('readonly') && !!online;
+    $('tileNew').hidden = false;   // New Game is for everyone, view-only links too
     $('tiles').classList.add('one');
     // An ended game isn't offered as Continue (after a refresh, what this phone remembers decides until it loads)
     const loaded = online ? !!online.gameMeta : !(FB_CFG && myRooms.current);
