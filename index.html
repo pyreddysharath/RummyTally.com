@@ -2786,14 +2786,15 @@
   // Names are tidied when saved: each word starts with a capital, the rest small ("ravi KUMAR" → "Ravi Kumar")
   // While typing: capital first letters, without trimming (so spaces can still be typed)
   function liveCase(el) {
-    const v = el.value, w = v.toLowerCase().replace(/(^|[\s\-(])(\S)/g, (m, a, c) => a + c.toUpperCase());
+    const v = el.value, w = v.replace(/(^|[\s\-(])(\S)/g, (m, a, c) => a + c.toUpperCase());   // first letters only – the rest stays as typed
     if (w === v) return;
     const a = el.selectionStart, b = el.selectionEnd;
     el.value = w;
     try { el.setSelectionRange(a, b); } catch (e) { /* ignore */ }
   }
   function nameCase(v) {
-    return String(v || '').trim().replace(/\s+/g, ' ').toLowerCase().replace(/(^|[\s\-(])(\S)/g, (m, a, c) => a + c.toUpperCase());
+    // Capital first letter of each word; the rest stays as typed (keeps RK, VIP, McDonald)
+    return String(v || '').trim().replace(/\s+/g, ' ').replace(/(^|[\s\-(])(\S)/g, (m, a, c) => a + c.toUpperCase());
   }
   function addPlayer() {
     const input = $('newPlayer');
@@ -4196,9 +4197,9 @@
       const own = e.role === 'owner', canShare = own || e.role === 'edit';
       return `<details class="mr-room" data-rid="${id}" ${roomsExpanded.has(id) ? 'open' : ''}>
         <summary><span class="mr-tg" aria-hidden="true"></span>${mrEditing('room', id) ? mrEditor(e.name || 'Room', 40) : `<span class="mr-nm"><span class="mr-name">${esc(e.name || 'Room')}</span><span class="mr-meta">${fmtDMY(e.createdMs || e.at || Date.now())}</span></span>`}
+          ${canShare ? `<button type="button" class="ico-btn share ${roomTool[id] ? 'on' : ''}" data-mr="links" data-id="${id}" title="Share the whole room" aria-label="Share the whole room">${I_SHARE}</button>` : ''}
           ${own && !mrEditing('room', id) ? `<button type="button" class="ico-btn pen" data-mr="renroom" data-id="${id}" title="Rename room" aria-label="Rename room">${I_PEN}</button>` : ''}
-          <button type="button" class="ico-btn del" data-mr="${own ? 'delroom' : 'forget'}" data-id="${id}" title="${own ? 'Delete room' : 'Remove from this device'}" aria-label="${own ? 'Delete room' : 'Remove from this device'}">${I_TRASH}</button>
-          ${canShare ? `<button type="button" class="ico-btn share ${roomTool[id] ? 'on' : ''}" data-mr="links" data-id="${id}" title="Share the whole room" aria-label="Share the whole room">${I_SHARE}</button>` : ''}</summary>
+          <button type="button" class="ico-btn del" data-mr="${own ? 'delroom' : 'forget'}" data-id="${id}" title="${own ? 'Delete room' : 'Remove from this device'}" aria-label="${own ? 'Delete room' : 'Remove from this device'}">${I_TRASH}</button></summary>
         <div class="mr-body" id="mrb-${id}"></div></details>`;
     };
     const mine = all.filter(([, e]) => e.role === 'owner'), shared = all.filter(([, e]) => e.role !== 'owner');
