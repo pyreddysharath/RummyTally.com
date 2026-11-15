@@ -7102,37 +7102,18 @@
   /* ---------- Our Other Sites: read from config/OurOtherSites.json in this site's GitHub repo (edit that file to change the list) ---------- */
   const OS_URL = 'config/OurOtherSites.json';
   const OS_KEY = 'rummy-other-sites';   // last list fetched, used when offline
-  const OS_FALLBACK = {
-    "content": "A couple of other things we've built — feel free to drop by if any of these sound useful to you.",
-    "sites": [
-      {
-        "site": "AyuBase6.com",
-        "url": "https://ayubase6.com",
-        "information": "A private, no-login daily health companion — nutrition, health calculators, reminders and routines, all kept on your own device."
-      },
-      {
-        "site": "BharatGaruda.com",
-        "url": "https://bharatgaruda.com",
-        "information": "India's government sites aggregator — brings together official government links across every state and union territory of India, in one place."
-      },
-      {
-        "site": "IntiGuttu.com",
-        "url": "https://intiguttu.com",
-        "information": "A private, no-login home reference app — for household DIY fixes, everyday tips, and recipes from every state of India and country in the world."
-      },
-      {
-        "site": "DataEkam.com",
-        "url": "https://dataekam.com",
-        "information": "A single-page tool that formats, validates, and converts data across formats like JSON, YAML, XML, CSV, and more, plus a text comparison tab. Its name nods to 'Ekam' (Sanskrit for 'one') — one tool for handling many formats in one place."
-      }
-    ]
-  };   // same as the file, used if it can't be loaded
   function renderOtherSites(data) {
-    const d = data && Array.isArray(data.sites) ? data : OS_FALLBACK;
+    if (!data || !Array.isArray(data.sites)) {   // not loaded yet and nothing saved (first visit while offline)
+      $('osIntro').textContent = 'Couldn\'t load the list – check your connection.';
+      $('osList').innerHTML = '';
+      return;
+    }
+    const d = data;
     const host = u => { try { return new URL(u).hostname.replace(/^www\./, '').toLowerCase(); } catch (e) { return ''; } };
     const me = 'rummytally.com';
-    const sites = d.sites.filter(x => x && x.site && /^https:\/\//.test(x.url || '') && host(x.url) !== me);   // never list this site itself
-    $('osIntro').textContent = d.content || OS_FALLBACK.content;
+    const sites = d.sites.filter(x => x && x.site && /^https:\/\//.test(x.url || '') && host(x.url) !== me)   // never list this site itself
+      .sort((a, b) => String(a.site).localeCompare(String(b.site), undefined, { sensitivity: 'base' }));   // A to Z
+    $('osIntro').textContent = d.content || '';
     $('osList').innerHTML = sites.map((x, i) => `<div class="os-row"><a class="os-link" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.site)}</a>`
       + (x.information ? `<button type="button" class="info-btn os-i" data-osinfo="${i}" aria-expanded="false" aria-controls="osInfo${i}" title="About ${esc(x.site)}" aria-label="About ${esc(x.site)}">?</button>` : '')
       + `</div>` + (x.information ? `<div class="guide os-info" id="osInfo${i}" hidden>${esc(x.information)}</div>` : '')).join('');
@@ -7140,7 +7121,7 @@
   async function loadOtherSites() {
     let saved = null;
     try { saved = JSON.parse(localStorage.getItem(OS_KEY) || 'null'); } catch (e) { /* ignore */ }
-    renderOtherSites(saved);
+    if (saved) renderOtherSites(saved);
     try {
       const res = await fetch(OS_URL, { cache: 'no-cache' });
       if (!res.ok) throw new Error(res.status);
@@ -7148,7 +7129,7 @@
       if (!data || !Array.isArray(data.sites)) throw new Error('bad list');
       try { localStorage.setItem(OS_KEY, JSON.stringify(data)); } catch (e) { /* ignore */ }
       renderOtherSites(data);
-    } catch (e) { /* offline or GitHub unreachable: keep the saved or built-in list */ }
+    } catch (e) { if (!saved) renderOtherSites(null); }   // offline: keep the saved list, or say it couldn't load
   }
   $('osList').addEventListener('click', e => {
     const b = e.target.closest('[data-osinfo]');
