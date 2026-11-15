@@ -1659,7 +1659,7 @@
   #suSettingsSlot .settings-card > summary::after { display: none !important; }
   #suSettingsSlot .settings-card > summary { cursor: default; justify-content: flex-start; }
   .gs-i { display: none; }
-  #suSettingsSlot .gs-i { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; min-height: 0; padding: 0; font-size: .72rem; letter-spacing: 0; text-transform: none; line-height: 1; border-width: 1.5px; margin-left: 8px; flex: 0 0 auto; }
+  #suSettingsSlot .gs-i { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; min-height: 0; padding: 0; font-size: .62rem; letter-spacing: 0; text-transform: none; line-height: 1; border-width: 1.5px; margin-left: 4px; flex: 0 0 auto; }
   #suSettingsSlot .gs-help { margin: 4px 0 10px; }
 
   /* All ⓘ boxes: one soft tint, no separators, a bar before each title */
@@ -1702,6 +1702,14 @@
   /* Save: gold, like Start */
   table.board tfoot td.save-cell #btnSaveRound { background: linear-gradient(160deg, #f3cb5a, #dcac36); color: #2b1f00; border: 0; box-shadow: 0 2px 0 #b88d22; }
   table.board tfoot td.save-cell #btnSaveRound:disabled { opacity: .55; }
+
+  /* Help buttons show "?" – plain upright letter */
+  #btnLegend, #btnGsInfo, [data-soinfo] { font-family: 'Lexend', system-ui, sans-serif; font-style: normal; font-weight: 700; }
+  /* bigger tap area round the small Game Setup "?" */
+  #suSettingsSlot .gs-i { position: relative; }
+  #suSettingsSlot .gs-i::before { content: ""; position: absolute; inset: -12px; }
+
+  #suSettingsSlot .settings-card > summary { gap: 0 !important; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -1764,7 +1772,7 @@
 
   <!-- Settings -->
   <details class="card settings-card" id="settingsBox">
-    <summary><span class="ttl"><span class="suit">♣</span> Game Setup</span><button type="button" class="info-btn gs-i" id="btnGsInfo" aria-expanded="false" aria-controls="gsHelp" title="What these mean">i</button></summary>
+    <summary><span class="ttl"><span class="suit">♣</span> Game Setup</span><button type="button" class="info-btn gs-i" id="btnGsInfo" aria-expanded="false" aria-controls="gsHelp" title="What these mean" aria-label="What these mean">?</button></summary>
     <div class="guide gs-help" id="gsHelp" hidden>
       <div class="gu-sec"><div class="gu-h">Total limit</div><p class="gu-note">A player whose total reaches this is OUT.</p></div>
       <div class="gu-sec"><div class="gu-h">Drop count</div><p class="gu-note">Points for dropping at the start of a hand – the <b>D</b> button. <b>M</b> (middle drop) is twice this.</p></div>
@@ -1803,7 +1811,7 @@
 
   <!-- Scoreboard: players, score entry, rounds -->
   <section class="card board-card">
-    <h2 class="sb-h"><span class="sbs" aria-hidden="true"><svg class="bk" viewBox="0 0 24 24"><path fill="currentColor" d="M12 1.5C9 5.5 3 9.2 3 13.6a4.6 4.6 0 0 0 7.6 3.5L9.6 22h4.8l-1-4.9A4.6 4.6 0 0 0 21 13.6c0-4.4-6-8.1-9-12.1z"/></svg><svg class="rd" viewBox="0 0 24 24"><path fill="currentColor" d="M12 21.5C8.5 18 2 13.6 2 8.2A5.2 5.2 0 0 1 12 6a5.2 5.2 0 0 1 10 2.2c0 5.4-6.5 9.8-10 13.3z"/></svg></span><span class="sb-word">Scoreboard<button class="info-btn sb-i" id="btnLegend" type="button" aria-expanded="false" aria-controls="legendNote" title="How to read the scoreboard" aria-label="How to read the scoreboard">i</button></span><span class="sbs" aria-hidden="true"><svg class="rd" viewBox="0 0 24 24"><path fill="currentColor" d="M12 1.5 20 12l-8 10.5L4 12z"/></svg><svg class="bk" viewBox="0 0 24 24"><path fill="currentColor" d="M12 1.5a4.8 4.8 0 0 0-3.9 7.6A4.8 4.8 0 1 0 10.7 17L9.6 22h4.8l-1.1-5a4.8 4.8 0 1 0 2.6-7.9A4.8 4.8 0 0 0 12 1.5z"/></svg></span>
+    <h2 class="sb-h"><span class="sbs" aria-hidden="true"><svg class="bk" viewBox="0 0 24 24"><path fill="currentColor" d="M12 1.5C9 5.5 3 9.2 3 13.6a4.6 4.6 0 0 0 7.6 3.5L9.6 22h4.8l-1-4.9A4.6 4.6 0 0 0 21 13.6c0-4.4-6-8.1-9-12.1z"/></svg><svg class="rd" viewBox="0 0 24 24"><path fill="currentColor" d="M12 21.5C8.5 18 2 13.6 2 8.2A5.2 5.2 0 0 1 12 6a5.2 5.2 0 0 1 10 2.2c0 5.4-6.5 9.8-10 13.3z"/></svg></span><span class="sb-word">Scoreboard<button class="info-btn sb-i" id="btnLegend" type="button" aria-expanded="false" aria-controls="legendNote" title="How to read the scoreboard" aria-label="How to read the scoreboard">?</button></span><span class="sbs" aria-hidden="true"><svg class="rd" viewBox="0 0 24 24"><path fill="currentColor" d="M12 1.5 20 12l-8 10.5L4 12z"/></svg><svg class="bk" viewBox="0 0 24 24"><path fill="currentColor" d="M12 1.5a4.8 4.8 0 0 0-3.9 7.6A4.8 4.8 0 1 0 10.7 17L9.6 22h4.8l-1.1-5a4.8 4.8 0 1 0 2.6-7.9A4.8 4.8 0 0 0 12 1.5z"/></svg></span>
       <span class="h2-btns">
         <button class="time-chip idle" id="timeChip" type="button" hidden title="Game clock – tap to go to Play / Pause / End Game"><span class="tc-ico">⏱</span> <span id="timeChipText">00:00:00</span></button>
         <button type="button" class="ico-btn" id="btnCloseBoard" title="Close this game (it stays in its room)" aria-label="Close this game" hidden><svg class="x-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
@@ -6789,7 +6797,7 @@
     const d = shareData(splitMethod);
     $('splitOpts').innerHTML = SPLIT_METHODS.map(m => `<div class="split-opt ${m.id === splitMethod ? 'on' : ''}">
         <div class="so-top"><label><input type="radio" name="splitMethod" value="${m.id}" ${m.id === splitMethod ? 'checked' : ''}> ${m.name}</label>
-          <button type="button" class="info-btn" data-soinfo="${m.id}" aria-expanded="${openInfo.has(m.id)}" title="How this works">i</button></div>
+          <button type="button" class="info-btn" data-soinfo="${m.id}" aria-expanded="${openInfo.has(m.id)}" title="How this works" aria-label="How this works">?</button></div>
         <div class="so-info" ${openInfo.has(m.id) ? '' : 'hidden'}>${m.info(d)}</div></div>`).join('');
     $('sharePot').innerHTML = `Pot: <b>${rupees(d.pot)}</b> = ${d.buyIns} × ${rupees(d.share)} entry` +
       (d.rejoins ? ` (${state.players.length} players + ${d.rejoins} rejoin${d.rejoins === 1 ? '' : 's'})` : ` (${state.players.length} players)`);
