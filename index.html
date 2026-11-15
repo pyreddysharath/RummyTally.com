@@ -1732,8 +1732,10 @@
   .mr-ed .ico-btn.ok { color: #fff; background: var(--felt); border-radius: 50%; }
   .mr-games li .mr-ed { margin-right: 4px; }
 
-  /* Suits in a softer gold than TALLY – home page and top bar alike */
-  .hero-suits .bk, .hero-suits .rd, .tb-brand .tbb-suits .wh, .tb-brand .tbb-suits .rd { color: #f0c24a; opacity: .78; }
+  /* Suits in their card colours with a gold outline – home page and top bar alike */
+  .hero-suits svg, .tb-brand .tbb-suits svg { overflow: visible; }
+  .hero-suits .bk path, .tb-brand .tbb-suits .wh path { fill: #111; stroke: #f0c24a; stroke-width: 1.8px; paint-order: stroke; }
+  .hero-suits .rd path, .tb-brand .tbb-suits .rd path { fill: #e0282e; stroke: #f0c24a; stroke-width: 1.8px; paint-order: stroke; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
