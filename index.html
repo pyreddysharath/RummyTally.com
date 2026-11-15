@@ -1839,6 +1839,12 @@
   /* A little green space between the top bar and every page, like the menu pages */
   body.scr-setup .setup-card { margin-top: 12px !important; }
   .card.board-card { margin-top: 12px !important; }
+
+  /* ✕ to close a menu page, at the right of its title */
+  .ft-sec > .ft-title { display: flex; align-items: center; }
+  .pg-x { margin: -6px -8px -6px auto; width: 30px; height: 30px; color: var(--muted); }
+  .pg-x:hover { color: var(--text); }
+  .pg-x svg { width: 16px; height: 16px; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -4212,7 +4218,7 @@
     b.toggle('scr-game', scr === 'game');
     b.toggle('nav-mode', !home);
     const info = !!page && page !== 'rooms';
-    $('btnBack').hidden = home;
+    $('btnBack').hidden = home || info;   // menu pages (How it works, Feedback, Privacy & Legal, Our Other Sites) close with their own ✕
     // Every page but home shows the RummyTally name at the top (tap it to go home)
     $('tbTitle').textContent = '';
     $('tbTitle').hidden = true;
@@ -4289,6 +4295,9 @@
     if (infoOver && page) { closeInfoPage(); return; }   // back from an info page: to what was underneath
     navHistory = false; if (curScreen() !== 'home') goHome(true);
   });
+  // Menu pages are like pop-ups: a ✕ at the right of their title closes them and returns to where you were
+  document.querySelectorAll('.ft-sec > .ft-title').forEach(t => t.insertAdjacentHTML('beforeend', `<button type="button" class="close-x pg-x" data-pgclose title="Close" aria-label="Close">${I_X}</button>`));
+  document.addEventListener('click', e => { if (e.target.closest('[data-pgclose]')) $('btnBack').click(); });
   $('btnBack').addEventListener('click', () => {
     if (infoOver && page) { try { history.back(); } catch (e) { closeInfoPage(); } return; }
     goHome();
