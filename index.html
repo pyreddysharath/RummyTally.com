@@ -1863,6 +1863,11 @@
   .mr-games .mg-nt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
   .mr-games .mg-date, .mr-room .mr-meta { flex: 0 0 auto; }
   .mr-room .mr-name { min-width: 0; }
+
+  /* My Rooms: every other room (with its games) on a light band; faint lines between games */
+  .mr-list > .mr-room { padding: 2px 8px !important; margin: 0 -8px !important; }
+  .mr-list > .mr-room:nth-child(odd) { background: #f3eedf !important; }
+  .mr-games li + li { border-top: 1px solid #e2dbc6; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -4381,8 +4386,8 @@
         <div class="mr-body"><div class="mr-sub">Games</div><ul class="mr-games">${rows}</ul></div></details>`;
     }).join('');
     card.innerHTML = `
-      <div class="ft-title">My Rooms</div><div class="mr-h">Created by me</div>${mine.length ? mine.map(sec).join('') : '<p class="mr-empty">None</p>'}
-      <div class="mr-h mr-h2">Shared with me</div>${shared.length || one ? shared.map(sec).join('') + one : '<p class="mr-empty">None</p>'}
+      <div class="ft-title">My Rooms</div><div class="mr-h">Created by me</div>${mine.length ? '<div class="mr-list">' + mine.map(sec).join('') + '</div>' : '<p class="mr-empty">None</p>'}
+      <div class="mr-h mr-h2">Shared with me</div>${shared.length || one ? '<div class="mr-list">' + shared.map(sec).join('') + one + '</div>' : '<p class="mr-empty">None</p>'}
       <div class="msg" id="mrMsg"></div>`;
     if (keep && keep.t) { $('mrMsg').textContent = keep.t; $('mrMsg').className = keep.c; }
     roomsExpanded.forEach(id => { if (!id.startsWith('g:')) fillRoomSection(id); });
