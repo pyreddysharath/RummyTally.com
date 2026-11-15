@@ -1848,6 +1848,21 @@
 
   /* Only the page outlines are square (where the page meets the green); everything inside keeps its rounded shape */
   body.scr-setup .setup-card, .card.board-card, .card.rooms-card, body.page-info .ft-sec { border-radius: 0 !important; }
+
+  /* My Rooms: share · rename · delete sit close together at the far right, leaving room for the date */
+  .mr-games li, .mr-room > summary { gap: 6px; }
+  .mr-games .ico-btn, .mr-room > summary .ico-btn { width: 24px; height: 26px; }
+  .mr-games .ico-btn + .ico-btn, .mr-room > summary .ico-btn + .ico-btn { margin-left: -2px; }
+  .mr-games li > .ico-btn:last-child, .mr-room > summary > .ico-btn:last-child { margin-right: -10px; }
+  .mr-body { padding-left: 26px !important; }
+  .mr-games li { gap: 5px; }
+  .mr-games .mg-date { margin-left: 6px; }
+
+  /* A long game or room name shortens with "…", the date always shows in full */
+  .mr-games .mg-name { display: flex; align-items: baseline; min-width: 0; }
+  .mr-games .mg-nt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .mr-games .mg-date, .mr-room .mr-meta { flex: 0 0 auto; }
+  .mr-room .mr-name { min-width: 0; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -4434,7 +4449,7 @@
         const here = online && online.roomId === id && online.gameId === x.id;
         const gt = gameTitle(x.createdMs, x.seq, x.gameName);
         const ren = mrEditing('game', id, x.id);
-        return `<li class="${here ? 'here' : ''}">${ren ? mrEditor(x.gameName || gt, 50) : `<button type="button" class="mg-name" data-mr="opengameof" data-id="${id}" data-g="${x.id}">${esc(gt)}${/\d{4}/.test(gt) ? '' : `<span class="mg-date">${fmtDMY(x.createdMs || Date.now())}</span>`}</button>`}
+        return `<li class="${here ? 'here' : ''}">${ren ? mrEditor(x.gameName || gt, 50) : `<button type="button" class="mg-name" data-mr="opengameof" data-id="${id}" data-g="${x.id}"><span class="mg-nt">${esc(gt)}</span>${/\d{4}/.test(gt) ? '' : `<span class="mg-date">${fmtDMY(x.createdMs || Date.now())}</span>`}</button>`}
           ${x.status === 'ended' ? '<span class="mg-tag">Ended</span>' : ''}
           ${canShare ? `<button type="button" class="ico-btn share ${gameTool[id + '_' + x.id] ? 'on' : ''}" data-mr="glinks" data-id="${id}" data-g="${x.id}" title="Share this game" aria-label="Share this game">${I_SHARE}</button>` : ''}
           ${canShare && !ren ? `<button type="button" class="ico-btn pen" data-mr="rengame" data-id="${id}" data-g="${x.id}" title="Rename game" aria-label="Rename game">${I_PEN}</button>` : ''}
