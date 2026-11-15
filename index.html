@@ -1661,6 +1661,17 @@
   .gs-i { display: none; }
   #suSettingsSlot .gs-i { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; min-height: 0; padding: 0; font-size: .72rem; letter-spacing: 0; text-transform: none; line-height: 1; border-width: 1.5px; margin-left: 8px; flex: 0 0 auto; }
   #suSettingsSlot .gs-help { margin: 4px 0 10px; }
+
+  /* All ⓘ boxes: one soft tint, no separators, a bar before each title */
+  .guide, .so-info { background: #f1f7f3 !important; border: 1px solid #d9e8de !important; box-shadow: none !important; border-radius: 14px; }
+  .guide { padding: 12px 14px 6px; }
+  .so-info { padding: 9px 12px; margin: 4px 0 6px 28px; }
+  .guide .gu-sec { border-top: 0 !important; padding: 4px 0 10px; }
+  .guide .gu-h { display: flex; align-items: center; gap: 8px; color: var(--felt); }
+  .guide .gu-h::before { content: ""; width: 4px; height: 14px; border-radius: 2px; background: var(--gold); flex: 0 0 auto; }
+  .gu-list { margin: 0 0 6px; padding-left: 18px; font-size: .82rem; color: var(--text); line-height: 1.5; }
+  .gu-list li { margin: 0 0 4px; }
+  .gu-list li::marker { color: var(--gold); }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -1803,7 +1814,12 @@
       </div>
       <div class="gu-sec">
         <div class="gu-h">Ending a game</div>
-        <p class="gu-note">The game ends by itself as soon as there is a winner – when only one player is left, through the scores or by marking the others OUT. To end it earlier, tap <b>■ End Game</b>, tick the winner(s) and tap <b>🏆 End Game</b> – or tap <b>✎</b> on Player, tick the winner(s) and tap <b>🏆 Make winner &amp; end game</b>. Anyone with edit access can undo it with <b>↺ Reopen game</b>.</p>
+        <ul class="gu-list">
+          <li><b>By itself</b> – as soon as only one player is left, through the scores or by marking the others OUT.</li>
+          <li><b>End Game</b> – tap it under the scoreboard, tick the winner(s) and tap <b>🏆 End Game</b>.</li>
+          <li><b>✎ on Player</b> – tick the winner(s) and tap <b>🏆 Make winner &amp; end game</b>.</li>
+        </ul>
+        <p class="gu-note">Anyone with edit access can undo it with <b>↺ Reopen game</b>.</p>
       </div>
     </div>
     <div class="sb-headrow">
