@@ -1768,6 +1768,14 @@
   .sb-hgrid .sb-setup-ed { grid-column: 2; grid-row: 2; justify-self: center; }
   /* Game Setup opened to view only (ended game or view access) */
   body.rules-view .settings-card .settings-apply { display: none !important; }
+
+  /* Our Other Sites (footer) */
+  .os-intro { margin: 0 0 10px; color: var(--muted); }
+  .os-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+  .os-link { color: var(--felt); font-weight: 600; text-decoration: none; }
+  .os-link:hover { text-decoration: underline; }
+  .os-i { width: 18px; height: 18px; min-height: 0; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: .66rem; }
+  .os-info { margin: 2px 0 8px; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -2040,6 +2048,12 @@
         <div class="msg" id="fbMsg"></div>
       </div>
       <div class="fb-done" id="fbDone" hidden>Your feedback has been fed back. Thanks!</div>
+    </div>
+
+    <div class="ft-sec" id="ft-othersites" hidden>
+      <div class="ft-title">Our Other Sites</div>
+      <p class="os-intro" id="osIntro"></p>
+      <div class="os-list" id="osList"></div>
     </div>
 
     <div class="ft-sec" id="ft-legal" hidden>
@@ -4493,7 +4507,8 @@
     install: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v7M9 11l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     export: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     import: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7 9l5-5 5 5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    menu: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>'
+    menu: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
+    sites: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 13v6H5V5h6M14 4h6v6M20 4l-9 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
   };
   const MB_KEY = 'rummy-menu-ava';   // last signed-in button, shown straight away on reload while Google sign-in is restored
   function renderMenuButton() {
@@ -4517,7 +4532,7 @@
   function renderMenu() {
     const it = (act, icon, label, sub) => `<button type="button" class="am-item" role="menuitem" data-menu="${act}">${icon}<span>${label}${sub ? `<small>${sub}</small>` : ''}</span></button>`;
     let html = '';
-    html += it('help', MI.help, 'How it works') + it('feedback', MI.feedback, 'Feedback') + it('legal', MI.legal, 'Privacy &amp; Legal');
+    html += it('help', MI.help, 'How it works') + it('feedback', MI.feedback, 'Feedback') + it('legal', MI.legal, 'Privacy &amp; Legal') + it('othersites', MI.sites, 'Our Other Sites');
     const tools = [];
     if (typeof installPrompt !== 'undefined' && installPrompt) tools.push(it('install', MI.install, 'Install App'));
     if (!$('btnExportData').hidden) tools.push(it('export', MI.export, 'Export data', 'Back up rooms and games'));
@@ -4553,7 +4568,7 @@
     if (a === 'outcancel') { menuAskOut = false; renderMenu(); return; }
     closeMenu();
     if (a === 'outyes') { signOutGoogle(true).then(() => { renderAll(); renderMenuButton(); }); return; }
-    if (a === 'rooms' || a === 'help' || a === 'feedback' || a === 'legal') openPage(a);
+    if (a === 'rooms' || a === 'help' || a === 'feedback' || a === 'legal' || a === 'othersites') openPage(a);
     else if (a === 'install') $('btnInstall').click();
     else if (a === 'export') $('btnExportData').click();
     else if (a === 'import') $('btnImportData').click();
@@ -7083,6 +7098,49 @@
     });
   }
   document.querySelectorAll('.ft-btn').forEach(b => b.addEventListener('click', () => showFooter(b.dataset.ft)));
+
+  /* ---------- Our Other Sites: read from the shared list on GitHub (the same file AyuBase6.com uses) ---------- */
+  const OS_URL = 'https://raw.githubusercontent.com/pyreddysharath/AyuBase6.com/main/config/OurOtherSites.json';
+  const OS_KEY = 'rummy-other-sites';   // last list fetched, used when offline
+  const OS_FALLBACK = {
+    content: "A couple of other things we've built — feel free to drop by if any of these sound useful to you.",
+    sites: [
+      { site: 'BharatGaruda.com', url: 'https://bharatgaruda.com', information: "India's government sites aggregator — brings together official government links across every state and union territory of India, in one place." },
+      { site: 'IntiGuttu.com', url: 'https://intiguttu.com', information: 'A private, no-login home reference app — for household DIY fixes, everyday tips, and recipes from every state of India and country in the world.' },
+      { site: 'DataEkam.com', url: 'https://dataekam.com', information: "A single-page tool that formats, validates, and converts data across formats like JSON, YAML, XML, CSV, and more, plus a text comparison tab. Its name nods to 'Ekam' (Sanskrit for 'one') — one tool for handling many formats in one place." }
+    ]
+  };
+  function renderOtherSites(data) {
+    const d = data && Array.isArray(data.sites) ? data : OS_FALLBACK;
+    const host = u => { try { return new URL(u).hostname.replace(/^www\./, '').toLowerCase(); } catch (e) { return ''; } };
+    const me = 'rummytally.com';
+    const sites = d.sites.filter(x => x && x.site && /^https:\/\//.test(x.url || '') && host(x.url) !== me);   // never list this site itself
+    $('osIntro').textContent = d.content || OS_FALLBACK.content;
+    $('osList').innerHTML = sites.map((x, i) => `<div class="os-row"><a class="os-link" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.site)}</a>`
+      + (x.information ? `<button type="button" class="info-btn os-i" data-osinfo="${i}" aria-expanded="false" aria-controls="osInfo${i}" title="About ${esc(x.site)}" aria-label="About ${esc(x.site)}">?</button>` : '')
+      + `</div>` + (x.information ? `<div class="guide os-info" id="osInfo${i}" hidden>${esc(x.information)}</div>` : '')).join('');
+  }
+  async function loadOtherSites() {
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(OS_KEY) || 'null'); } catch (e) { /* ignore */ }
+    renderOtherSites(saved);
+    try {
+      const res = await fetch(OS_URL, { cache: 'no-cache' });
+      if (!res.ok) throw new Error(res.status);
+      const data = await res.json();
+      if (!data || !Array.isArray(data.sites)) throw new Error('bad list');
+      try { localStorage.setItem(OS_KEY, JSON.stringify(data)); } catch (e) { /* ignore */ }
+      renderOtherSites(data);
+    } catch (e) { /* offline or GitHub unreachable: keep the saved or built-in list */ }
+  }
+  $('osList').addEventListener('click', e => {
+    const b = e.target.closest('[data-osinfo]');
+    if (!b) return;
+    const box = $('osInfo' + b.dataset.osinfo), open = box.hidden;
+    box.hidden = !open;
+    b.setAttribute('aria-expanded', String(open));
+  });
+  loadOtherSites();
   document.querySelectorAll('.ft-sub').forEach(b => b.addEventListener('click', () => {
     document.querySelectorAll('.ft-sub').forEach(x => x.classList.toggle('on', x === b));
     $('ft-privacy').hidden = b.dataset.ftsub !== 'privacy';
