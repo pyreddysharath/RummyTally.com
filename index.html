@@ -1722,6 +1722,15 @@
   .tb-brand .tbb-suits svg { width: 10px; height: 10px; display: block; }
   .tb-brand .tbb-suits .wh { color: #fff; }
   .tb-brand .tbb-suits .rd { color: #ff7a7a; }
+
+  /* My Rooms: rename */
+  .ico-btn.pen { color: #8a6a10; }
+  .ico-btn.pen svg { width: 15px; height: 15px; }
+  .mr-ed { flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; }
+  .mr-ed input { flex: 1; min-width: 0; min-height: 0; padding: 5px 9px; border-radius: 9px; font-size: .86rem; }
+  .mr-ed .ico-btn { width: 28px; height: 28px; font-weight: 800; }
+  .mr-ed .ico-btn.ok { color: #fff; background: var(--felt); border-radius: 50%; }
+  .mr-games li .mr-ed { margin-right: 4px; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -1969,7 +1978,7 @@
     <div class="ft-sec" id="ft-help" hidden>
       <div class="ft-title">How it works</div>
       <details open><summary>1. Start a game</summary><p>Tap <b>New Game</b>. The first time, give the room a name – the occasion, e.g. "Diwali at Ravi's" – then check the game name, add at least <b>2 players</b>, look at <b>Game Setup</b> (tap it to open) and tap <b>Start</b>. For the next game, tap <b>New Game</b> again: the room is already chosen, or pick another one or <b>＋ Create a new room</b>. The app reopens on the same screen after a refresh.</p></details>
-      <details><summary>2. Enter scores</summary><p>Type each round's points and tap <b>Save</b> – numbers are kept as you type, even if the page reloads. Add someone later with <b>＋ Add player</b> under the list. A player is OUT on reaching the total limit. The <b>i</b> next to Scoreboard explains every colour and icon. Tap <b>✎</b> beside the Room or Game name to rename it while the game is on (only the owner can rename the room).</p></details>
+      <details><summary>2. Enter scores</summary><p>Type each round's points and tap <b>Save</b> – numbers are kept as you type, even if the page reloads. Add someone later with <b>＋ Add player</b> under the list. A player is OUT on reaching the total limit. The <b>?</b> next to Scoreboard explains every colour and icon. To rename a room or game, tap <b>✎</b> beside it in <b>My Rooms</b> (only the owner can rename the room).</p></details>
       <details><summary>3. Share and play together</summary><p>Send the <b>Edit link</b> to people who enter scores and the <b>View link</b> to people who only watch. Scores update on every phone straight away, and nobody needs to log in.<br>
         • <b>One game</b> – the share button next to Scoreboard, or the share icon beside a game in My Rooms. They see only that game.<br>
         • <b>Whole room</b> – the share icon beside a room in My Rooms. They see every game in it, including new ones.<br>
@@ -3814,7 +3823,7 @@
     const typing = sbEdit && $('sbEdIn') ? { v: $('sbEdIn').value, f: document.activeElement === $('sbEdIn') } : null;
     // Renaming: the name becomes a text box with ✓ and ✕
     const editor = (label, raw, max) => `<div class="sb-row sb-editing"><span class="sb-l">${label}</span><span class="sb-ed"><input type="text" id="sbEdIn" maxlength="${max}" value="${esc(raw)}" aria-label="${label} name" autocomplete="off" enterkeyhint="done"><button type="button" class="sb-edb ok" data-sbed="save" aria-label="Save">${I_OK}</button><button type="button" class="sb-edb" data-sbed="cancel" aria-label="Cancel">${I_X}</button></span></div>`;
-    const pen = (kind, what) => `<button type="button" class="sb-pen" data-sbed="${kind}" title="Rename" aria-label="Rename ${what}">${I_PEN}</button>`;
+    const pen = () => '';   // renaming lives in My Rooms now
     let html = '';
     // One strip: 🏠 Room › Game (the default "14-Nov-2026 · Game 1" shows as "Game 1" here)
     let roomName = '', gameFull = '', gameShort = '', canRoom = false, canGame = canRenameGame();
@@ -4186,7 +4195,8 @@
     const sec = ([id, e]) => {
       const own = e.role === 'owner', canShare = own || e.role === 'edit';
       return `<details class="mr-room" data-rid="${id}" ${roomsExpanded.has(id) ? 'open' : ''}>
-        <summary><span class="mr-tg" aria-hidden="true"></span><span class="mr-nm"><span class="mr-name">${esc(e.name || 'Room')}</span><span class="mr-meta">${fmtDMY(e.createdMs || e.at || Date.now())}</span></span>
+        <summary><span class="mr-tg" aria-hidden="true"></span>${mrEditing('room', id) ? mrEditor(e.name || 'Room', 40) : `<span class="mr-nm"><span class="mr-name">${esc(e.name || 'Room')}</span><span class="mr-meta">${fmtDMY(e.createdMs || e.at || Date.now())}</span></span>`}
+          ${own && !mrEditing('room', id) ? `<button type="button" class="ico-btn pen" data-mr="renroom" data-id="${id}" title="Rename room" aria-label="Rename room">${I_PEN}</button>` : ''}
           <button type="button" class="ico-btn del" data-mr="${own ? 'delroom' : 'forget'}" data-id="${id}" title="${own ? 'Delete room' : 'Remove from this device'}" aria-label="${own ? 'Delete room' : 'Remove from this device'}">${I_TRASH}</button>
           ${canShare ? `<button type="button" class="ico-btn share ${roomTool[id] ? 'on' : ''}" data-mr="links" data-id="${id}" title="Share the whole room" aria-label="Share the whole room">${I_SHARE}</button>` : ''}</summary>
         <div class="mr-body" id="mrb-${id}"></div></details>`;
@@ -4229,6 +4239,45 @@
     } catch (err) { box.innerHTML = '<p class="mr-empty">Offline</p>'; }
   }
 
+  // My Rooms: rename a room (owner) or a game (owner or edit access)
+  let mrEdit = null;   // { kind: 'room' | 'game', r, g }
+  function mrEditing(kind, r, g) { return !!mrEdit && mrEdit.kind === kind && mrEdit.r === r && (kind === 'room' || mrEdit.g === g); }
+  function mrEditor(raw, max) {
+    return `<span class="mr-ed"><input type="text" id="mrEdIn" maxlength="${max}" value="${esc(raw)}" aria-label="New name" autocomplete="off" enterkeyhint="done">
+      <button type="button" class="ico-btn ok" data-mr="rensave" title="Save" aria-label="Save">✓</button><button type="button" class="ico-btn" data-mr="rencancel" title="Cancel" aria-label="Cancel">✕</button></span>`;
+  }
+  function startRename(kind, r, g) {
+    mrEdit = { kind, r, g };
+    if (kind === 'game') roomsExpanded.add(r);
+    renderRooms();
+    const f = $('mrEdIn'); if (f) { f.focus(); f.select(); }
+  }
+  async function saveRename() {
+    const ed = mrEdit, f = $('mrEdIn');
+    if (!ed || !f) return;
+    const v = nameCase(f.value);
+    mrEdit = null;
+    if (!v) { renderRooms(); return; }
+    try {
+      await cloudInit();
+      if (ed.kind === 'room') {
+        const name = v.slice(0, 40);
+        await cw(fb.updateDoc(R.room(ed.r), { name, updatedAt: fb.serverTimestamp() }));
+        if (myRooms.rooms[ed.r]) { myRooms.rooms[ed.r].name = name; saveRooms(); }
+        if (online && online.roomId === ed.r && online.room) online.room.name = name;
+      } else {
+        const name = v.slice(0, 50);
+        if (online && online.roomId === ed.r && online.gameId === ed.g) { state.gameName = name; saveState(); }
+        else await cw(fb.updateDoc(R.game(ed.r, ed.g), { gameName: name, updatedAt: fb.serverTimestamp() }));
+        (gamesOf(ed.r) || []).forEach(x => { if (x.id === ed.g) x.gameName = name; });
+        const sg = myRooms.games[ed.r + '_' + ed.g]; if (sg) { sg.name = name; saveRooms(); }
+      }
+      if (myRooms.current && myRooms.current.roomId === ed.r) { delete myRooms.current.label; saveRooms(); }
+      toast('Renamed');
+    } catch (err) { onCloudError(err); }
+    renderRooms(); renderAll(); renderScreen();
+  }
+
   async function fillRoomSection(id) {
     const body = $('mrb-' + id);
     if (!body) return;
@@ -4238,9 +4287,11 @@
     const rows = list ? (list.length ? `<ul class="mr-games">${[...list].sort((a, b) => (a.createdMs || 0) - (b.createdMs || 0)).map(x => {   // oldest first
         const here = online && online.roomId === id && online.gameId === x.id;
         const gt = gameTitle(x.createdMs, x.seq, x.gameName);
-        return `<li class="${here ? 'here' : ''}"><button type="button" class="mg-name" data-mr="opengameof" data-id="${id}" data-g="${x.id}">${esc(gt)}${/\d{4}/.test(gt) ? '' : `<span class="mg-date">${fmtDMY(x.createdMs || Date.now())}</span>`}</button>
+        const ren = mrEditing('game', id, x.id);
+        return `<li class="${here ? 'here' : ''}">${ren ? mrEditor(x.gameName || gt, 50) : `<button type="button" class="mg-name" data-mr="opengameof" data-id="${id}" data-g="${x.id}">${esc(gt)}${/\d{4}/.test(gt) ? '' : `<span class="mg-date">${fmtDMY(x.createdMs || Date.now())}</span>`}</button>`}
           ${x.status === 'ended' ? '<span class="mg-tag">Ended</span>' : ''}
           ${canShare ? `<button type="button" class="ico-btn share ${gameTool[id + '_' + x.id] ? 'on' : ''}" data-mr="glinks" data-id="${id}" data-g="${x.id}" title="Share this game" aria-label="Share this game">${I_SHARE}</button>` : ''}
+          ${canShare && !ren ? `<button type="button" class="ico-btn pen" data-mr="rengame" data-id="${id}" data-g="${x.id}" title="Rename game" aria-label="Rename game">${I_PEN}</button>` : ''}
           ${own ? `<button type="button" class="ico-btn del" data-mr="delgamein" data-id="${id}" data-g="${x.id}" title="Delete game" aria-label="Delete game">${I_TRASH}</button>` : ''}</li>
           ${gameTool[id + '_' + x.id] ? `<li class="mg-links"><div class="mr-tool lk-box" id="mgl-${id}_${x.id}">Loading…</div></li>` : ''}`;
       }).join('')}</ul>` : '<p class="mr-empty">None</p>')
@@ -4318,7 +4369,16 @@
     if (d.open) { roomsExpanded.add(d.dataset.rid); fillRoomSection(d.dataset.rid); }
     else roomsExpanded.delete(d.dataset.rid);
   }, true);
+  $('roomsCard').addEventListener('keydown', e => {
+    if (e.target.id !== 'mrEdIn') return;
+    e.stopPropagation();
+    if (e.key === 'Enter') { e.preventDefault(); saveRename(); }
+    else if (e.key === 'Escape') { mrEdit = null; renderRooms(); }
+    else if (e.key === ' ') e.stopPropagation();
+  });
+  $('roomsCard').addEventListener('keyup', e => { if (e.target.id === 'mrEdIn' && e.key === ' ') e.preventDefault(); });
   $('roomsCard').addEventListener('click', e => {
+    if (e.target.id === 'mrEdIn') { e.preventDefault(); return; }   // typing a name: don't fold the room
     const lk = e.target.closest('[data-lk]');
     if (lk) { shareLink(lk); return; }
     const gr = e.target.closest('[data-lkdel], [data-lkmake]');
@@ -4342,6 +4402,10 @@
     else if (a === 'resetlinks') resetLinksFor(id);
     else if (a === 'delroom') deleteRoom(id);
     else if (a === 'delgamein') deleteGameIn(id, b.dataset.g);
+    else if (a === 'renroom') startRename('room', id);
+    else if (a === 'rengame') startRename('game', id, b.dataset.g);
+    else if (a === 'rensave') saveRename();
+    else if (a === 'rencancel') { mrEdit = null; renderRooms(); }
     else if (a === 'opengameof') openRoomFromList(id, b.dataset.g);
     else if (a === 'forget') forgetRoom(id, false);
     else if (a === 'forgetgame') forgetRoom(id, true);
