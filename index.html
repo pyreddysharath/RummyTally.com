@@ -1649,6 +1649,11 @@
   .app-menu .am-item svg, .app-menu .am-item .g { color: #f0c24a; }
   .app-menu .am-item small { color: rgba(243,247,244,.7); }
   .app-menu .am-sep { background: rgba(255,255,255,.18); }
+
+  /* Existing / New: the chosen side in dark green */
+  .su-pt { background: #dfe9e2; }
+  .su-pt input:checked + span, .su-players .su-pt input:checked + span { background: var(--felt); color: #fff; }
+  .su-pt input:checked + span .su-count { background: #f0c24a; color: #2b1f00; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
