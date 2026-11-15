@@ -1807,7 +1807,7 @@
   .mr-h2 { margin-top: 22px !important; }
 
   /* Pages run edge to edge, straight down to the bottom (no floating cards) */
-  .card.rooms-card { box-shadow: none !important; border: 0 !important; width: 100vw; max-width: none; margin: 0 0 0 calc(50% - 50vw) !important; padding: 14px 16px 24px !important; min-height: calc(100vh - 64px); min-height: calc(100dvh - 64px); }
+  .card.rooms-card { box-shadow: none !important; border: 0 !important; width: 100vw; max-width: none; margin: 0 0 0 calc(50% - 50vw) !important; padding: 18px 16px 24px !important; min-height: calc(100vh - 64px); min-height: calc(100dvh - 64px); }
   body.page-info .app-footer { padding-top: 0 !important; padding-bottom: 0 !important; }
   body.page-info .ft-sec { box-shadow: none !important; width: 100vw; max-width: none; margin: 0 0 0 calc(50% - 50vw) !important; min-height: calc(100vh - 54px); min-height: calc(100dvh - 54px); }
   @media (min-width: 640px) {   /* wide screens: keep the page in the centre column */
@@ -1827,6 +1827,14 @@
   .mr-room .ico-btn, .mr-games .ico-btn { width: 28px; height: 26px; }
   .mr-h { margin: 2px 0 4px !important; }
   .mr-h2 { margin-top: 22px !important; }
+
+  /* Every page starts the same way as the menu pages: title 18px below the top bar, then 8px to the content */
+  #setupCard { padding-top: 18px !important; }
+  #setupCard > #suTitle { padding-top: 0 !important; padding-bottom: 0 !important; margin: 0 0 8px !important; }
+  .board-card { padding-top: 18px !important; }
+  .board-card h2.sb-h { padding-top: 0 !important; margin: 0 0 15px !important; }
+  .rooms-card > .ft-title + .mr-h { margin-top: 0 !important; }
+  #ft-legal > .ft-title + .ft-subtabs { margin-top: 0; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -2108,6 +2116,7 @@
     </div>
 
     <div class="ft-sec" id="ft-legal" hidden>
+      <div class="ft-title">Privacy &amp; Legal</div>
       <div class="ft-subtabs" role="tablist">
         <button type="button" class="ft-sub on" data-ftsub="privacy">Privacy</button>
         <button type="button" class="ft-sub" data-ftsub="cookies">Cookies</button>
@@ -4338,7 +4347,7 @@
         <div class="mr-body"><div class="mr-sub">Games</div><ul class="mr-games">${rows}</ul></div></details>`;
     }).join('');
     card.innerHTML = `
-      <div class="mr-h">Created by me</div>${mine.length ? mine.map(sec).join('') : '<p class="mr-empty">None</p>'}
+      <div class="ft-title">My Rooms</div><div class="mr-h">Created by me</div>${mine.length ? mine.map(sec).join('') : '<p class="mr-empty">None</p>'}
       <div class="mr-h mr-h2">Shared with me</div>${shared.length || one ? shared.map(sec).join('') + one : '<p class="mr-empty">None</p>'}
       <div class="msg" id="mrMsg"></div>`;
     if (keep && keep.t) { $('mrMsg').textContent = keep.t; $('mrMsg').className = keep.c; }
