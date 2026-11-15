@@ -1654,6 +1654,13 @@
   .su-pt { background: #dfe9e2; }
   .su-pt input:checked + span, .su-players .su-pt input:checked + span { background: var(--felt); color: #fff; }
   .su-pt input:checked + span .su-count { background: #f0c24a; color: #2b1f00; }
+
+  /* New Game: Game Setup always open – no chevron; ⓘ explains the fields */
+  #suSettingsSlot .settings-card > summary::after { display: none !important; }
+  #suSettingsSlot .settings-card > summary { cursor: default; justify-content: flex-start; }
+  .gs-i { display: none; }
+  #suSettingsSlot .gs-i { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; min-height: 0; padding: 0; font-size: .72rem; letter-spacing: 0; text-transform: none; line-height: 1; border-width: 1.5px; margin-left: 8px; flex: 0 0 auto; }
+  #suSettingsSlot .gs-help { margin: 4px 0 10px; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -1716,7 +1723,15 @@
 
   <!-- Settings -->
   <details class="card settings-card" id="settingsBox">
-    <summary><span class="ttl"><span class="suit">♣</span> Game Setup</span></summary>
+    <summary><span class="ttl"><span class="suit">♣</span> Game Setup</span><button type="button" class="info-btn gs-i" id="btnGsInfo" aria-expanded="false" aria-controls="gsHelp" title="What these mean">i</button></summary>
+    <div class="guide gs-help" id="gsHelp" hidden>
+      <div class="gu-sec"><div class="gu-h">Total limit</div><p class="gu-note">A player whose total reaches this is OUT.</p></div>
+      <div class="gu-sec"><div class="gu-h">Drop count</div><p class="gu-note">Points for dropping at the start of a hand – the <b>D</b> button. <b>M</b> (middle drop) is twice this.</p></div>
+      <div class="gu-sec"><div class="gu-h">Full count</div><p class="gu-note">The most points a player can get in one hand – the <b>F</b> button.</p></div>
+      <div class="gu-sec"><div class="gu-h">Buy-in per player</div><p class="gu-note">What each player puts in the pot. Used by <b>Calculate Shares</b>; leave it empty if you don't play for money.</p></div>
+      <div class="gu-sec"><div class="gu-h">Who deals first</div><p class="gu-note"><b>Last player</b> – the last player in the list deals the first hand. <b>First player</b> – the first player does. After that the deal moves to the next player each hand.</p></div>
+      <div class="gu-sec"><div class="gu-h">Next dealer OUT</div><p class="gu-note">If the player due to deal is OUT: <b>Previous deals</b> – the last dealer deals again. <b>Next deals</b> – the deal skips to the next player still in.</p></div>
+    </div>
     <div class="gsf">
       <div class="gs-row"><label for="setLimit">Total limit</label><input type="number" id="setLimit" min="1" step="1" inputmode="numeric"></div>
       <div class="gs-row"><label for="setDrop">Drop count</label><input type="number" id="setDrop" min="1" step="1" inputmode="numeric"></div>
@@ -3366,11 +3381,22 @@
     renderSetup(true);
     prefetchRoomGames(setup.roomId);
     $('suSettingsSlot').appendChild(sb);
-    sb.open = false;   // folded; tap + to see the rules
+    sb.open = true;    // always open on New Game
+    document.querySelectorAll('input[name="firstDealer"]').forEach(i => { i.checked = i.value === 'last'; });   // new games: last player deals first
+    $('gsHelp').hidden = true; $('btnGsInfo').setAttribute('aria-expanded', 'false');
     const card = $('setupCard');
     try { card.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) { /* ignore */ }
   }
 
+  $('settingsBox').querySelector('summary').addEventListener('click', e => {
+    if (e.target.closest('#btnGsInfo')) {
+      e.preventDefault();
+      const h = $('gsHelp'); h.hidden = !h.hidden;
+      $('btnGsInfo').setAttribute('aria-expanded', String(!h.hidden));
+      return;
+    }
+    if (setup) e.preventDefault();   // New Game: Game Setup stays open
+  });
   function closeSetup() {
     setup = null;
     const sb = $('settingsBox');
