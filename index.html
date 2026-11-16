@@ -1983,6 +1983,17 @@
   .mr-room > summary > .mr-nm { flex: 1 1 auto; min-width: 0; display: flex !important; align-items: baseline; }
   .mr-room > summary .mr-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .mr-room > summary .mr-meta { flex: 0 0 auto; margin-left: auto !important; padding-left: 8px; }
+
+  /* Number circles take the colour of their name: rooms gold, games green, inactive games grey */
+  .mr-room > summary .mr-name { color: #b8860b !important; }
+  .mr-no { background: #b8860b !important; color: #fff !important; }
+  .mr-no.on { background: #8a6a10 !important; }
+  .mr-games .mg-sp { background: #0e5a3a !important; color: #fff !important; }
+  .mr-games .mg-sp.on { background: #2c7c57 !important; }
+  .mr-games li.idle .mg-sp { background: #a4ada7 !important; color: #fff !important; }
+  /* …and are as tall as the name next to them */
+  .mr-no { width: 16px !important; height: 16px !important; font-size: .6rem !important; }
+  .mr-games .mg-sp { width: 14px !important; height: 14px !important; font-size: .54rem !important; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
