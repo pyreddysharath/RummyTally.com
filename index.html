@@ -2085,6 +2085,12 @@
   body.wc-on #tileNew svg { width: 26px; height: 26px; margin: 0; }
   #welcomeCard .wc-dev { margin: 12px 0 0 !important; } #welcomeCard .wc-top .wc-steps { margin-top: 12px !important; }   /* room around the device icons */
   @media (max-width: 340px) { #welcomeCard .wc-top { padding: 12px 8px !important; } #welcomeCard .wc-top .wc-steps { flex-wrap: nowrap !important; gap: 3px !important; } #welcomeCard .wc-top .wc-steps span { font-size: .6rem !important; padding: 4px 6px !important; } #welcomeCard .wc-menu { padding: 0 8px 10px !important; gap: 6px !important; } #welcomeCard .wc-menu .am-item { font-size: .7rem !important; padding: 8px 4px !important; } }
+  /* My Rooms: chevron further left, clear of the room number; a room's stats open under its heading */
+  .mr-room > summary > .mr-tg { margin-left: -6px; margin-right: 6px; }
+  .mr-room .ico-btn.rst.on { color: #fff; background: #b8860b; border-radius: 50%; }
+  .mr-stats { margin: 6px 0 10px; padding: 10px 10px 4px; background: #fffdf6; border: 1px solid #efdcab; border-radius: 12px; }
+  .mr-stats .st-tiles { margin: 0 0 12px; }
+  .mr-stats .st-tbl td { padding: 6px 8px; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -3874,6 +3880,13 @@
     renderSetup(true);
   }
 
+  // A players problem: shown right under Players, scrolled into view
+  function playersErr(text, focusEl) {
+    setMsg('suMsg', '', '');
+    setMsg('suPMsg', text, 'err');
+    try { if (focusEl) focusEl.focus({ preventScroll: true }); } catch (e) { /* ignore */ }
+    try { (document.querySelector('#suBody .su-players') || $('suPMsg')).scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { /* ignore */ }
+  }
   // full = rebuild the whole section (open / close); otherwise only the changing parts
   function renderSetup(full) {
     const card = $('setupCard');
@@ -3964,7 +3977,7 @@
     const name = nameCase(f.value).slice(0, 30);
     if (!name) { f.focus(); return; }
     const taken = setup.added.concat(setup.useExisting ? setup.prevPlayers.map(p => p.name) : []).map(n => n.toLowerCase());
-    if (taken.includes(name.toLowerCase())) { setMsg('suMsg', `"${name}" is already in the list.`, 'err'); f.select(); return; }
+    if (taken.includes(name.toLowerCase())) { playersErr(`"${name}" is already in the list.`); f.select(); return; }
     setMsg('suMsg', '', ''); if ($('suPMsg')) setMsg('suPMsg', '', '');
     if (setup.useExisting && setup.prevAvail) { setup.prevPlayers.push({ id: nextIdFor(setup.prevPlayers), name }); setup.orderTaps = []; }
     else setup.added.push(name);
@@ -4009,9 +4022,9 @@
       if ((setup.orderTaps || []).length) applyOrder();   // seats tapped so far go first
       setup.prevPlayers.forEach(p => { p.name = nameCase(p.name).slice(0, 30); });
       const blank = setup.prevPlayers.findIndex(p => !p.name);
-      if (blank >= 0) { renderSetup(); setMsg('suMsg', `Player ${blank + 1} has no name – type one or tap ✕ to remove them.`, 'err'); try { $('suPE' + blank).focus(); } catch (e) { /* ignore */ } return; }
+      if (blank >= 0) { renderSetup(); playersErr(`Player ${blank + 1} has no name – type one or tap ✕ to remove them.`, $('suPE' + blank)); return; }
       const seen = new Set(), dup = setup.prevPlayers.concat(setup.added.map(n => ({ name: n }))).find(p => { const k = p.name.toLowerCase(); if (seen.has(k)) return true; seen.add(k); return false; });
-      if (dup) { renderSetup(); setMsg('suMsg', `"${dup.name}" is in the list twice.`, 'err'); return; }
+      if (dup) { renderSetup(); playersErr(`"${dup.name}" is in the list twice.`); return; }
     }
     const keep = setup.useExisting && setup.prevPlayers.length > 0;
     let players = keep ? setup.prevPlayers.map(p => ({ ...p })) : [];
@@ -4020,10 +4033,7 @@
     if (players.length < 2) {
       setup.addOpen = true;
       renderSetup();
-      setMsg('suMsg', '', '');
-      setMsg('suPMsg', players.length ? 'Add one more player – a game needs at least 2.' : 'Add at least 2 players to start.', 'err');   // right under Players
-      try { $('suPlayerName').focus({ preventScroll: true }); } catch (e) { /* ignore */ }
-      try { (document.querySelector('#suBody .su-players') || $('suPMsg')).scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { /* ignore */ }
+      playersErr(players.length ? 'Add one more player – a game needs at least 2.' : 'Add at least 2 players to start.', $('suPlayerName'));
       return;
     }
     atHome = false;   // the new game's screen comes next
@@ -4396,6 +4406,7 @@
   let roomsOpen = false;
   const roomsExpanded = new Set();
   const roomTool = {};          // room id -> true when its links are showing
+  const roomStat = {};   // rooms whose stats are open under their heading in My Rooms
   const gameTool = {};          // room_game id -> true when that game's links are showing
   const INACTIVE_DAYS = 2;
   const gameFull = {};
@@ -4657,6 +4668,14 @@
     if (!box) return;
     const games = statsGames.filter(e => statsRoom === 'all' || e.r === statsRoom).map(e => e.x);
     const roomCount = statsRoom === 'all' ? statsRooms.length : 1;
+    const cur = statsRoom === 'all' ? null : statsRooms.find(o => o.r === statsRoom);
+    const pick = statsRooms.length > 1 ? `<div class="st-pick"><span>Show</span><div class="st-combo"><button type="button" class="st-cb" id="statsPickBtn" aria-haspopup="listbox" aria-expanded="false">${cur ? `${esc(cur.name)} <small>${cur.day}</small>` : 'All rooms'}<span class="cb-chev" aria-hidden="true"></span></button>
+      <div class="st-pop" id="statsPop" hidden><input type="search" id="statsQ" placeholder="Search by name or date" autocomplete="off"><div class="st-opts" id="statsOpts" role="listbox"></div></div></div></div>` : '';
+    box.innerHTML = pick + statsCore(games, roomCount);
+    renderStats.picker();
+  }
+  // Tiles + players table for a set of games (Stats page, and a room's stats in My Rooms when roomCount is 0)
+  function statsCore(games, roomCount) {
     const now = Date.now();
     const active = games.filter(x => x.status !== 'ended' && !(((tsMs(x.updatedAt) || x.createdMs || 0) && now - (tsMs(x.updatedAt) || x.createdMs) > INACTIVE_DAYS * DAY))).length;
     const ppl = {};   // players matched by name (ignoring case and spaces)
@@ -4673,16 +4692,15 @@
     });
     const list = Object.values(ppl).sort((a, b) => b.won - a.won || (b.won / b.played) - (a.won / a.played) || b.played - a.played || a.name.localeCompare(b.name));
     const top = list.length && list[0].won ? list[0].won : -1;
-    const cur = statsRoom === 'all' ? null : statsRooms.find(o => o.r === statsRoom);
-    const pick = statsRooms.length > 1 ? `<div class="st-pick"><span>Show</span><div class="st-combo"><button type="button" class="st-cb" id="statsPickBtn" aria-haspopup="listbox" aria-expanded="false">${cur ? `${esc(cur.name)} <small>${cur.day}</small>` : 'All rooms'}<span class="cb-chev" aria-hidden="true"></span></button>
-      <div class="st-pop" id="statsPop" hidden><input type="search" id="statsQ" placeholder="Search by name or date" autocomplete="off"><div class="st-opts" id="statsOpts" role="listbox"></div></div></div></div>` : '';
-    box.innerHTML = `${pick}<div class="st-tiles"><div class="st-t t1"><b>${roomCount}</b><small>${roomCount === 1 ? 'Room' : 'Rooms'}</small></div><div class="st-t t2"><b>${games.length}</b><small>Games</small><span>${active} active</span></div><div class="st-t t3"><b>${list.length}</b><small>Players</small></div></div>
+    return `<div class="st-tiles">${roomCount ? `<div class="st-t t1"><b>${roomCount}</b><small>${roomCount === 1 ? 'Room' : 'Rooms'}</small></div>` : ''}<div class="st-t t2"><b>${games.length}</b><small>Games</small><span>${active} active</span></div><div class="st-t t3"><b>${list.length}</b><small>Players</small></div></div>
       <hr class="st-sep">
       <div class="st-h">Players</div>
       ${list.length ? `<table class="st-tbl"><thead><tr><th>Player</th><th>Played</th><th>Won</th><th>Win %</th></tr></thead><tbody>${list.map(p => {
         const rate = p.played ? Math.round(100 * p.won / p.played) : 0;
         return `<tr><td>${esc(p.name)}${p.won === top ? ' <span aria-label="most wins">🏆</span>' : ''}</td><td>${p.played}</td><td>${p.won}</td><td>${rate}%</td></tr>`;
       }).join('')}</tbody></table>` : '<p class="mr-empty">No players yet</p>'}`;
+  }
+  renderStats.picker = function () {
     const btn = $('statsPickBtn');
     if (btn) {
       const pop = $('statsPop'), q = $('statsQ'), opts = $('statsOpts');
@@ -4725,7 +4743,7 @@
       const day = fmtDMY(e.createdMs || e.at || Date.now());
       return `<details class="mr-room" data-rid="${id}" ${roomsExpanded.has(id) ? 'open' : ''}>
         <summary><span class="mr-tg" aria-hidden="true"></span><button type="button" class="mr-no ${full ? 'on' : ''}" data-mr="roomno" data-id="${id}" title="${own ? 'Full name and rename' : 'Show the full name'}" aria-label="${own ? 'Full name and rename' : 'Show the full name'}" aria-expanded="${!!full}">${i + 1}</button><span class="mr-nm"><span class="mr-name">${esc(e.name || 'Room')}</span><span class="mr-meta">${day}</span></span>
-          <button type="button" class="ico-btn rst" data-mr="rstats" data-id="${id}" title="Stats for this room" aria-label="Stats for this room">${MI.stats}</button>
+          <button type="button" class="ico-btn rst ${roomStat[id] ? 'on' : ''}" data-mr="rstats" data-id="${id}" title="Stats for this room" aria-label="Stats for this room" aria-expanded="${!!roomStat[id]}">${MI.stats}</button>
           ${canShare ? `<button type="button" class="ico-btn share ${roomTool[id] ? 'on' : ''}" data-mr="links" data-id="${id}" title="Share the whole room" aria-label="Share the whole room">${I_SHARE}</button>` : ''}
           <button type="button" class="ico-btn del" data-mr="${own ? 'delroom' : 'forget'}" data-id="${id}" title="${own ? 'Delete room' : 'Remove from this device'}" aria-label="${own ? 'Delete room' : 'Remove from this device'}">${I_TRASH}</button>
           ${ren ? `<span class="mr-full mr-full-ed">${mrEditor(e.name || 'Room', 40)}<span class="mf-day">${day}</span></span>` : (full ? `<span class="mr-full">${esc(e.name || 'Room')} · ${day}</span>` : '')}</summary>
@@ -4832,7 +4850,8 @@
       }).join('')}</ul>` : '<p class="mr-empty">None</p>')
       : '<p class="mr-empty">Loading…</p>';
     const tool = roomTool[id] ? '<div class="mr-tool lk-box" id="mrLinks-' + id + '">Loading…</div>' : '';
-    body.innerHTML = tool + '<div class="mr-sub">Games</div>' + rows;
+    const stat = roomStat[id] ? `<div class="mr-tool mr-stats">${list ? statsCore(list, 0) : '<p class="mr-empty">Loading…</p>'}</div>` : '';
+    body.innerHTML = stat + tool + '<div class="mr-sub">Games</div>' + rows;
     if (roomTool[id]) fillRoomLinks(id);
     body.querySelectorAll('[id^="mgl-"]').forEach(b => fillGameLinks(b.id.slice(4)));
     if (list && (isOpenRoom(id) || otherRoomDocs[id])) return;
@@ -4934,7 +4953,11 @@
       if (b.dataset.ren) { if (mrEditing('game', id, b.dataset.g)) { mrEdit = null; renderRooms(); } else startRename('game', id, b.dataset.g); }
       else { gameFull[key] = !gameFull[key]; renderRooms(); }
     }
-    else if (a === 'rstats') { statsRoom = id; openPage('stats'); }   // this room's stats
+    else if (a === 'rstats') {   // this room's stats, right under its heading
+      roomStat[id] = !roomStat[id];
+      if (roomStat[id]) roomsExpanded.add(id);
+      renderRooms();
+    }
     else if (a === 'roomno') {   // tap a room's number: full name (and rename, for the owner)
       const e2 = myRooms.rooms[id] || {};
       if (e2.role === 'owner') { if (mrEditing('room', id)) { mrEdit = null; renderRooms(); } else startRename('room', id); }
