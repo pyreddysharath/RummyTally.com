@@ -2038,6 +2038,13 @@
   #ft-stats > .pg-h { display: flex; align-items: center; gap: 14px; margin: 0 0 14px; font-size: 1.15rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #0f5a3c; line-height: 1.45; }
   #ft-stats > .pg-h::before, #ft-stats > .pg-h::after { content: ""; flex: 1; height: 1.5px; background: linear-gradient(90deg, transparent, var(--gold)); }
   #ft-stats > .pg-h::after { background: linear-gradient(90deg, var(--gold), transparent); }
+
+  /* Stats: players as a table */
+  .st-tbl { width: 100%; border-collapse: collapse; font: 500 .86rem Lexend, sans-serif; }
+  .st-tbl th { font: 700 .64rem Lexend, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: #7d8a82; text-align: right; padding: 4px 8px 6px; border-bottom: 1px solid #e2dbc6; }
+  .st-tbl td { padding: 8px; text-align: right; border-bottom: 1px solid #efe9da; color: #1d2b24; }
+  .st-tbl th:first-child, .st-tbl td:first-child { text-align: left; padding-left: 4px; }
+  .st-tbl td:first-child { font-weight: 700; color: #0e5a3a; overflow-wrap: anywhere; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -4615,10 +4622,10 @@
     box.innerHTML = `${pick}<div class="st-tiles"><div class="st-t t1"><b>${roomCount}</b><small>${roomCount === 1 ? 'Room' : 'Rooms'}</small></div><div class="st-t t2"><b>${games.length}</b><small>Games</small><span>${active} active</span></div><div class="st-t t3"><b>${list.length}</b><small>Players</small></div></div>
       <hr class="st-sep">
       <div class="st-h">Players</div>
-      ${list.length ? list.map(p => {
+      ${list.length ? `<table class="st-tbl"><thead><tr><th>Player</th><th>Played</th><th>Won</th><th>Win %</th></tr></thead><tbody>${list.map(p => {
         const rate = p.played ? Math.round(100 * p.won / p.played) : 0;
-        return `<div class="st-p"><span class="st-av">${esc(p.name.charAt(0).toUpperCase())}</span><span class="st-nm"><b>${esc(p.name)}${p.won === top ? ' 🏆' : ''}</b><span>Played ${p.played} · Win rate ${rate}%<i style="width:${Math.round(rate * .6)}px"></i></span></span><span class="st-w"><b>${p.won}</b><small>${p.won === 1 ? 'win' : 'wins'}</small></span></div>`;
-      }).join('') : '<p class="mr-empty">No players yet</p>'}`;
+        return `<tr><td>${esc(p.name)}${p.won === top ? ' <span aria-label="most wins">🏆</span>' : ''}</td><td>${p.played}</td><td>${p.won}</td><td>${rate}%</td></tr>`;
+      }).join('')}</tbody></table>` : '<p class="mr-empty">No players yet</p>'}`;
     const btn = $('statsPickBtn');
     if (btn) {
       const pop = $('statsPop'), q = $('statsQ'), opts = $('statsOpts');
