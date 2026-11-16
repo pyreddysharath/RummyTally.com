@@ -1887,6 +1887,9 @@
   .rooms-card .mr-h { gap: 8px; font-size: .76rem; font-weight: 800; letter-spacing: .07em; color: var(--felt); }
   .rooms-card .mr-h::after { display: none; }
   .rooms-card .mr-h::before { content: ""; width: 4px; height: 16px; border-radius: 2px; background: var(--gold); flex: 0 0 auto; }
+
+  /* Back chevron in gold, matching TALLY and the menu button */
+  #btnBack { color: #f0c24a !important; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -3675,8 +3678,7 @@
     let roomStep = '';
     if (FB_CFG) {
       if (setup.newRoom) {
-        roomStep = line('Room', 'suRoomName', `<input type="text" id="suRoomName" maxlength="40" value="${esc(setup.roomName)}" placeholder="e.g. Diwali at Ravi's" autocomplete="off">
-          <p class="su-note">Name it after the occasion.</p>
+        roomStep = line('Room', 'suRoomName', `<input type="text" id="suRoomName" maxlength="40" value="${esc(setup.roomName)}" placeholder="Name it after the occasion or place" autocomplete="off">
           ${rooms.length ? '<button type="button" class="su-link" data-su="existing">Choose an existing room instead</button>' : ''}`);
       } else {
         roomStep = line('Room', 'suRoomSearch', `<div class="combo"><input type="text" id="suRoomSearch" autocomplete="off" role="combobox" aria-expanded="${setup.listOpen}" aria-controls="suRoomList"
@@ -3686,7 +3688,7 @@
           ${sel && !(online && online.roomId === sel.id) ? '<button type="button" class="su-link su-link2" data-su="continue">Continue this room\'s last game</button>' : ''}`);
       }
     }
-    const gameStep = line('Game Name', 'suGameName', `<input type="text" id="suGameName" maxlength="50" value="${esc(setup.gameName)}" autocomplete="off">`);
+    const gameStep = line('Game', 'suGameName', `<input type="text" id="suGameName" maxlength="50" value="${esc(setup.gameName)}" autocomplete="off">`);
     const prev = setup.prevPlayers;
     const useOld = prev.length > 0 && setup.useExisting;
     // Existing players: one per line, numbered, folded by default (the chevron opens the list)
