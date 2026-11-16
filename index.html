@@ -1895,12 +1895,14 @@
   .su-where .su-link { white-space: nowrap; font-size: .68rem; }
 
   /* Scoreboard header: Room › Game in the share button's green; Limit and Buy-in soft gold; Game Setup button filled gold */
-  .sb-strip { background: #cfe8d8 !important; border-color: #a9d3b9 !important; }   /* information: soft; buttons: solid */
-  .sb-strip .seg.room b, .sb-strip .sep { color: #8a6a10 !important; }
-  .sb-strip .seg.game b { color: #0e5a3a !important; }
-  .sb-setup .sv-limit, .sb-setup .sv-buy { background: #fbe9b5 !important; border-color: #f0d48a !important; }
-  .sb-setup .sv-limit small, .sb-setup .sv-buy small { color: #8a6a10 !important; }
-  .sb-setup .sv-limit b, .sb-setup .sv-buy b { color: #3d2c00 !important; }
+  .sb-strip { background: #2c7c57 !important; border-color: #2c7c57 !important; }   /* two steps lighter than the share button */
+  .sb-strip .seg.room b, .sb-strip .sep { color: #f6d77a !important; }
+  .sb-strip .seg.game b { color: #fff !important; }
+  .sb-setup .sv-limit, .sb-setup .sv-buy { background: #f5d479 !important; border-color: #f5d479 !important; }   /* two steps lighter than the Game Setup button */
+  .sb-setup .sv-limit small, .sb-setup .sv-buy small { color: #6b4a00 !important; }
+  .sb-setup .sv-limit b, .sb-setup .sv-buy b { color: #2b1f00 !important; }
+  /* My Rooms: room names in gold, like the room in the Scoreboard pill (room = gold, game = green) */
+  .mr-room > summary .mr-name { color: #8a6a10 !important; }
   .sb-setup-ed { background: #f0c24a !important; border-color: #f0c24a !important; color: #2b1f00 !important; }
   .sb-setup-ed.on { background: #d6a62c !important; border-color: #d6a62c !important; }
 </style>
