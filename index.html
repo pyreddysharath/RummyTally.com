@@ -4191,7 +4191,8 @@
   const PAGE_TITLE = { rooms: 'My Rooms', help: 'How it works', feedback: 'Feedback', legal: 'Privacy & Legal' };
   const SCREEN_KEY = 'rummy-screen';
   let savedScreen = '';
-  try { savedScreen = localStorage.getItem(SCREEN_KEY) || ''; } catch (e) { /* ignore */ }
+  // The last screen is remembered per tab: a refresh returns to it, a new tab or a fresh launch starts on Home
+  try { savedScreen = sessionStorage.getItem(SCREEN_KEY) || ''; localStorage.removeItem(SCREEN_KEY); } catch (e) { /* ignore */ }
   function hasOpenGame() {
     if (boardIsClosed) return false;
     if (online) return !online.gameMeta || state.players.length > 0 || state.rounds.length > 0;   // a loaded game with nobody in it isn't offered
@@ -4302,7 +4303,7 @@
       // Remember the full label so it shows straight away after a refresh
       if (online && online.gameMeta && myRooms.current && myRooms.current.label !== lbl) { myRooms.current.label = lbl; saveRooms(); }
     }
-    try { localStorage.setItem(SCREEN_KEY, scr); } catch (e) { /* ignore */ }
+    try { sessionStorage.setItem(SCREEN_KEY, scr); } catch (e) { /* ignore */ }
     if (home) fitWordmark();
   }
   function resumeLabel() {
