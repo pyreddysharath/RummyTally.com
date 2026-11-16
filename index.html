@@ -2006,6 +2006,22 @@
 
   .mr-room .ico-btn.rst { color: #b8860b; }
   .mr-room .ico-btn.rst svg { width: 17px; height: 17px; }
+
+  /* Home: My Rooms and Stats side by side */
+  .home-pair { display: flex; gap: 10px; justify-content: center; }
+  .home-pair > .home-rooms { margin: 0 !important; }
+  .home-pair > [hidden] { display: none !important; }
+  /* Stats: searchable room picker */
+  .st-combo { position: relative; flex: 1; min-width: 0; }
+  .st-cb { width: 100%; display: flex; align-items: center; gap: 6px; min-height: 0; padding: 7px 10px; border: 1px solid #d9d1bb; border-radius: 10px; background: #fff; color: #0e5a3a; font: 600 .86rem Lexend, sans-serif; text-align: left; }
+  .st-cb small, .st-opts small { font-weight: 500; color: #7d8a82; margin-left: 4px; }
+  .st-cb .cb-chev { margin-left: auto; }
+  .st-pop { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 20; background: #fff; border: 1px solid #d9d1bb; border-radius: 12px; box-shadow: 0 10px 24px rgba(0,0,0,.15); padding: 8px; }
+  .st-pop input { width: 100%; box-sizing: border-box; font: 500 .84rem Lexend, sans-serif; padding: 7px 10px; border: 1px solid #d9d1bb; border-radius: 8px; margin-bottom: 6px; }
+  .st-opts { max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; }
+  .st-opts button { display: flex; align-items: baseline; justify-content: space-between; min-height: 0; padding: 8px; border: 0; border-radius: 8px; background: none; text-align: left; font: 600 .84rem Lexend, sans-serif; color: #1d2b24; }
+  .st-opts button.on { background: #e3f1e8; color: #0e5a3a; }
+  .st-cb .cb-chev { flex: 0 0 auto; width: 8px; height: 8px; margin: -4px 2px 0 auto; border-right: 2px solid #0e5a3a; border-bottom: 2px solid #0e5a3a; transform: rotate(45deg); }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -2042,7 +2058,7 @@
       <div class="tiles" id="tiles">
         <button class="tile tile-game" id="tileNew" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="11" height="15" rx="2" transform="rotate(-8 8.5 11.5)" fill="none" stroke="currentColor" stroke-width="2"/><rect x="9" y="6" width="11" height="15" rx="2" transform="rotate(6 14.5 13.5)" fill="currentColor" opacity=".9"/><path d="M14.5 10.5v6M11.5 13.5h6" stroke="#f0c24a" stroke-width="2" stroke-linecap="round"/></svg>New Game</button>
       </div>
-      <button class="home-rooms" id="tileRooms" type="button"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3.5 11 12 4l8.5 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 9.5V20h4.5v-5.5h3V20H18V9.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>My Rooms</button>
+      <div class="home-pair" id="homePair"><button class="home-rooms" id="tileRooms" type="button"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3.5 11 12 4l8.5 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 9.5V20h4.5v-5.5h3V20H18V9.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>My Rooms</button><button class="home-rooms home-stats" id="tileStats" type="button"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>Stats</button></div>
       <button class="resume" id="btnResume" type="button" hidden><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 4.5v15l12-7.5z" fill="currentColor"/></svg><span id="resumeText">Continue game</span></button>
     </div>
   </header>
@@ -4414,6 +4430,7 @@
     $('btnNewGame').classList.toggle('on', !!setup);
     // Home: the big buttons, and a way back into the open game
     $('tileRooms').hidden = !FB_CFG;
+    $('tileStats').hidden = !FB_CFG;
     $('tileNew').hidden = false;   // New Game is for everyone, view-only links too
     $('tiles').classList.add('one');
     // An ended game isn't offered as Continue (after a refresh, what this phone remembers decides until it loads)
@@ -4499,6 +4516,7 @@
   $('tbBrand').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goHome(); } });
   $('tileNew').addEventListener('click', () => flyTiles(() => openSetup('game')));
   $('tileRooms').addEventListener('click', () => flyTiles(() => openPage('rooms')));
+  $('tileStats').addEventListener('click', () => { statsRoom = 'all'; openPage('stats'); });
   $('btnRoomsNav').addEventListener('click', () => { if (page !== 'rooms') openPage('rooms'); });
   $('btnResume').addEventListener('click', showGame);
   function parkRoomCard() {
@@ -4545,7 +4563,7 @@
         return fb.getDoc(R.game(r, g)).then(d => { if (d.exists()) games.push({ r, x: { id: g, ...d.data() } }); }).catch(() => {});
       }));
       const ids = [...new Set(games.map(e => e.r).concat(rooms))];
-      statsRooms = ids.map(r => ({ r, name: (myRooms.rooms[r] && myRooms.rooms[r].name) || (Object.entries(myRooms.games).find(([k]) => k.startsWith(r + '_')) || [, {}])[1].room || 'Room' }));
+      statsRooms = ids.map(r => ({ r, day: fmtDMY((myRooms.rooms[r] && (myRooms.rooms[r].createdMs || myRooms.rooms[r].at)) || Date.now()), name: (myRooms.rooms[r] && myRooms.rooms[r].name) || (Object.entries(myRooms.games).find(([k]) => k.startsWith(r + '_')) || [, {}])[1].room || 'Room' }));
       statsGames = games;
       if (statsRoom !== 'all' && !ids.includes(statsRoom)) statsRoom = 'all';
       renderStats();
@@ -4575,7 +4593,9 @@
     });
     const list = Object.values(ppl).sort((a, b) => b.won - a.won || (b.won / b.played) - (a.won / a.played) || b.played - a.played || a.name.localeCompare(b.name));
     const top = list.length && list[0].won ? list[0].won : -1;
-    const pick = statsRooms.length > 1 ? `<label class="st-pick"><span>Show</span><select id="statsRoom"><option value="all">All rooms</option>${statsRooms.map(o => `<option value="${esc(o.r)}" ${o.r === statsRoom ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select></label>` : '';
+    const cur = statsRoom === 'all' ? null : statsRooms.find(o => o.r === statsRoom);
+    const pick = statsRooms.length > 1 ? `<div class="st-pick"><span>Show</span><div class="st-combo"><button type="button" class="st-cb" id="statsPickBtn" aria-haspopup="listbox" aria-expanded="false">${cur ? `${esc(cur.name)} <small>${cur.day}</small>` : 'All rooms'}<span class="cb-chev" aria-hidden="true"></span></button>
+      <div class="st-pop" id="statsPop" hidden><input type="search" id="statsQ" placeholder="Search by name or date" autocomplete="off"><div class="st-opts" id="statsOpts" role="listbox"></div></div></div></div>` : '';
     box.innerHTML = `${pick}<div class="st-tiles"><div class="st-t t1"><b>${roomCount}</b><small>${roomCount === 1 ? 'Room' : 'Rooms'}</small></div><div class="st-t t2"><b>${games.length}</b><small>Games</small><span>${active} active</span></div><div class="st-t t3"><b>${list.length}</b><small>Players</small></div></div>
       <hr class="st-sep">
       <div class="st-h">Players</div>
@@ -4583,8 +4603,19 @@
         const rate = p.played ? Math.round(100 * p.won / p.played) : 0;
         return `<div class="st-p"><span class="st-av">${esc(p.name.charAt(0).toUpperCase())}</span><span class="st-nm"><b>${esc(p.name)}${p.won === top ? ' 🏆' : ''}</b><span>Played ${p.played} · Win rate ${rate}%<i style="width:${Math.round(rate * .6)}px"></i></span></span><span class="st-w"><b>${p.won}</b><small>${p.won === 1 ? 'win' : 'wins'}</small></span></div>`;
       }).join('') : '<p class="mr-empty">No players yet</p>'}`;
-    const sel = $('statsRoom');
-    if (sel) sel.addEventListener('change', () => { statsRoom = sel.value; renderStats(); });
+    const btn = $('statsPickBtn');
+    if (btn) {
+      const pop = $('statsPop'), q = $('statsQ'), opts = $('statsOpts');
+      const fill = () => {
+        const t = q.value.trim().toLowerCase();
+        const rows = [{ r: 'all', name: 'All rooms', day: '' }].concat(statsRooms)
+          .filter(o => !t || o.r === 'all' && 'all rooms'.includes(t) || (o.name + ' ' + o.day).toLowerCase().includes(t));
+        opts.innerHTML = rows.length ? rows.map(o => `<button type="button" role="option" data-sr="${esc(o.r)}" class="${o.r === statsRoom ? 'on' : ''}">${esc(o.name)}${o.day ? `<small>${o.day}</small>` : ''}</button>`).join('') : '<p class="mr-empty">No rooms match</p>';
+      };
+      btn.addEventListener('click', () => { const open = pop.hidden; pop.hidden = !open; btn.setAttribute('aria-expanded', String(open)); if (open) { q.value = ''; fill(); q.focus(); } });
+      q.addEventListener('input', fill);
+      opts.addEventListener('click', e => { const o = e.target.closest('[data-sr]'); if (!o) return; statsRoom = o.dataset.sr; renderStats(); });
+    }
   }
 
   function renderRooms() {
