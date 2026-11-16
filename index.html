@@ -4645,7 +4645,7 @@
         document.addEventListener('click', e => { const pp = $('statsPop'); if (pp && !pp.hidden && !e.target.closest('.st-combo')) { pp.hidden = true; const b2 = $('statsPickBtn'); if (b2) b2.setAttribute('aria-expanded', 'false'); } });
         document.addEventListener('keydown', e => { const pp = $('statsPop'); if (e.key === 'Escape' && pp && !pp.hidden) { pp.hidden = true; } });
       }
-      btn.addEventListener('click', () => { const open = pop.hidden; pop.hidden = !open; btn.setAttribute('aria-expanded', String(open)); if (open) { q.value = ''; fill(); if (!matchMedia('(pointer: coarse)').matches) q.focus(); }   // phones: no keyboard until the search box is tapped });
+      btn.addEventListener('click', () => { const open = pop.hidden; pop.hidden = !open; btn.setAttribute('aria-expanded', String(open)); if (open) { q.value = ''; fill(); if (!matchMedia('(pointer: coarse)').matches) q.focus(); } });   // phones: no keyboard until the search box is tapped
       q.addEventListener('input', fill);
       opts.addEventListener('click', e => { const o = e.target.closest('[data-sr]'); if (!o) return; statsRoom = o.dataset.sr; renderStats(); });
     }
