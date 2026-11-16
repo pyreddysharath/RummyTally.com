@@ -2569,7 +2569,14 @@
     $('hdrRound').textContent = res ? `Game over · ${n} round${n === 1 ? '' : 's'}` : `Round ${n + 1}`;
     $('hdrPlayers').textContent = `${state.players.length} player${state.players.length === 1 ? '' : 's'}`;
     // Header shrinks once the game is under way
-    document.querySelector('header.hero').classList.toggle('compact', n > 0 || timerState() !== 'idle');
+    // While an online game is still loading after a refresh, keep the size it had last time so the title doesn't jump
+    let compact = n > 0 || timerState() !== 'idle';
+    const loading = !!FB_CFG && !!myRooms.current && !(online && online.gameMeta);
+    try {
+      if (loading) compact = localStorage.getItem('rummy-hero-compact') === '1';
+      else localStorage.setItem('rummy-hero-compact', compact ? '1' : '0');
+    } catch (e) { /* ignore */ }
+    document.querySelector('header.hero').classList.toggle('compact', compact);
     fitWordmark();
   }
 
