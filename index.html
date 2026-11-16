@@ -1948,6 +1948,30 @@
   .mr-full-ed .mr-ed, .mg-full-ed .mr-ed { flex: 1 1 100%; display: flex; gap: 6px; align-items: center; }
   .mr-full-ed .mr-ed input, .mg-full-ed .mr-ed input { flex: 1; min-width: 0; }
   .mf-day { font-size: .72rem; font-weight: 500; color: #7d8a82; }
+
+  /* My Rooms: a game's date always sits at the right, just before the share icon */
+  .mr-games li:not(.mg-full):not(.mg-links) > .mg-name { flex: 1 1 auto; min-width: 0; }
+  .mr-games .mg-name .mg-date { margin-left: auto !important; padding-left: 8px; }
+
+  /* Stats page */
+  .st-tiles { display: flex; gap: 8px; margin: 4px 0 16px; }
+  .st-t { flex: 1; border-radius: 12px; padding: 8px 6px; text-align: center; display: flex; flex-direction: column; align-items: center; }
+  .st-t b { font: 800 1.3rem/1.1 Lexend, sans-serif; color: #0e5a3a; }
+  .st-t small { font: 700 .62rem Lexend, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #6b7c72; }
+  .st-t span { font-size: .7rem; color: #7d8a82; margin-top: 2px; }
+  .st-t.t1 { background: #e3f1e8; } .st-t.t2 { background: #fbedc6; } .st-t.t2 b { color: #6b4a00; } .st-t.t3 { background: #eef0ee; }
+  .st-h { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font: 800 .76rem Lexend, sans-serif; letter-spacing: .07em; text-transform: uppercase; color: var(--felt); }
+  .st-h::before { content: ""; width: 4px; height: 16px; border-radius: 2px; background: var(--gold); }
+  .st-p { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin: 0 0 8px; background: #fff; border: 1px solid #e9e2cf; border-radius: 14px; }
+  .st-av { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%; background: #0e5a3a; color: #f6d77a; display: flex; align-items: center; justify-content: center; font: 800 .9rem Lexend, sans-serif; }
+  .st-nm { flex: 1; min-width: 0; }
+  .st-nm b { display: block; font: 700 .9rem Lexend, sans-serif; color: #0e5a3a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .st-nm > span { font-size: .72rem; color: #7d8a82; }
+  .st-nm i { display: inline-block; height: 6px; border-radius: 3px; background: var(--gold); vertical-align: middle; margin-left: 6px; }
+  .st-w { text-align: right; }
+  .st-w b { display: block; font: 800 1.1rem/1 Lexend, sans-serif; color: #b8860b; }
+  .st-w small { font: 700 .58rem Lexend, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: #7d8a82; }
+  .st-note { font-size: .72rem; color: #7d8a82; margin: 12px 0 0; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -2223,6 +2247,11 @@
         <div class="msg" id="fbMsg"></div>
       </div>
       <div class="fb-done" id="fbDone" hidden>Your feedback has been fed back. Thanks!</div>
+    </div>
+
+    <div class="ft-sec" id="ft-stats" hidden>
+      <div class="ft-title">Stats</div>
+      <div id="statsBody"><p class="mr-empty">Loading…</p></div>
     </div>
 
     <div class="ft-sec" id="ft-othersites" hidden>
@@ -4442,6 +4471,67 @@
   }
   function roomDoc(r) { return isOpenRoom(r) ? (online.room || {}) : (otherRoomDocs[r] || {}); }
 
+  /* ---------- Stats: rooms, games and players across everything in My Rooms ---------- */
+  // Who won a saved game (works it out the same way as the scoreboard, on that game's own data)
+  function resultOfDoc(d) {
+    const keep = state;
+    try {
+      state = Object.assign(freshState(), {
+        settings: cleanSettings(d.settings), players: Array.isArray(d.players) ? d.players : [], rounds: Array.isArray(d.rounds) ? d.rounds : [],
+        declared: Array.isArray(d.declared) ? d.declared : [], manualOut: Array.isArray(d.manualOut) ? d.manualOut : [],
+        rejoinAt: d.rejoinAt && typeof d.rejoinAt === 'object' ? d.rejoinAt : {}, rejoins: d.rejoins && typeof d.rejoins === 'object' ? d.rejoins : {},
+        timer: cleanTimer(d.timer)
+      });
+      return gameResult();
+    } catch (e) { return null; } finally { state = keep; }
+  }
+  let statsBusy = false;
+  async function loadStats() {
+    const box = $('statsBody');
+    if (!box || statsBusy) return;
+    statsBusy = true;
+    if (!box.dataset.done) box.innerHTML = '<p class="mr-empty">Loading…</p>';
+    const games = [];
+    try {
+      await cloudInit();
+      const rooms = Object.keys(myRooms.rooms).filter(r => !hiddenIds.has(r));
+      await Promise.all(rooms.map(r => isOpenRoom(r) ? null : prefetchRoomGames(r)));
+      rooms.forEach(r => (gamesOf(r) || []).forEach(x => games.push(x)));
+      const singles = Object.keys(myRooms.games).filter(id => !hiddenIds.has(id) && !coveredByRoom(id));
+      await Promise.all(singles.map(id => {
+        const [r, g] = [id.split('_')[0], id.slice(id.indexOf('_') + 1)];
+        return fb.getDoc(R.game(r, g)).then(d => { if (d.exists()) games.push({ id: g, ...d.data() }); }).catch(() => {});
+      }));
+      const roomCount = rooms.length + new Set(singles.map(id => id.split('_')[0]).filter(r => !rooms.includes(r))).size;
+      const now = Date.now();
+      const active = games.filter(x => x.status !== 'ended' && !(((tsMs(x.updatedAt) || x.createdMs || 0) && now - (tsMs(x.updatedAt) || x.createdMs) > INACTIVE_DAYS * DAY))).length;
+      const ppl = {};   // players matched by name (ignoring case and spaces)
+      games.forEach(x => {
+        const res = resultOfDoc(x);
+        const winners = new Set(res && (res.type === 'winner' || res.type === 'declared') ? res.players.map(p => p.id) : []);
+        (Array.isArray(x.players) ? x.players : []).forEach(p => {
+          const k = String(p.name || '').trim().replace(/\s+/g, ' ').toLowerCase();
+          if (!k) return;
+          const e = ppl[k] = ppl[k] || { name: nameCase(p.name), played: 0, won: 0 };
+          e.played++;
+          if (winners.has(p.id)) e.won++;
+        });
+      });
+      const list = Object.values(ppl).sort((a, b) => b.won - a.won || (b.won / b.played) - (a.won / a.played) || b.played - a.played || a.name.localeCompare(b.name));
+      const top = list.length && list[0].won ? list[0].won : -1;
+      box.innerHTML = `<div class="st-tiles"><div class="st-t t1"><b>${roomCount}</b><small>Rooms</small></div><div class="st-t t2"><b>${games.length}</b><small>Games</small><span>${active} active</span></div><div class="st-t t3"><b>${list.length}</b><small>Players</small></div></div>
+        <div class="st-h">Players</div>
+        ${list.length ? list.map(p => {
+          const rate = p.played ? Math.round(100 * p.won / p.played) : 0;
+          return `<div class="st-p"><span class="st-av">${esc(p.name.charAt(0).toUpperCase())}</span><span class="st-nm"><b>${esc(p.name)}${p.won === top ? ' 🏆' : ''}</b><span>Played ${p.played} · Win rate ${rate}%<i style="width:${Math.round(rate * .6)}px"></i></span></span><span class="st-w"><b>${p.won}</b><small>${p.won === 1 ? 'win' : 'wins'}</small></span></div>`;
+        }).join('') : '<p class="mr-empty">No players yet</p>'}
+        <p class="st-note">Counts every game in My Rooms. Players are matched by name. A win is a game that ended with that player as the winner.</p>`;
+      box.dataset.done = '1';
+    } catch (e) {
+      if (!box.dataset.done) box.innerHTML = '<p class="mr-empty">Couldn\'t load the stats – check your connection.</p>';
+    } finally { statsBusy = false; }
+  }
+
   function renderRooms() {
     const card = $('roomsCard');
     $('btnMyRooms').classList.toggle('on', roomsOpen);
@@ -4719,6 +4809,7 @@
     export: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     import: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7 9l5-5 5 5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     menu: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
+    stats: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
     sites: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 13v6H5V5h6M14 4h6v6M20 4l-9 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
   };
   const MB_KEY = 'rummy-menu-ava';   // last signed-in button, shown straight away on reload while Google sign-in is restored
@@ -4743,7 +4834,7 @@
   function renderMenu() {
     const it = (act, icon, label, sub) => `<button type="button" class="am-item" role="menuitem" data-menu="${act}">${icon}<span>${label}${sub ? `<small>${sub}</small>` : ''}</span></button>`;
     let html = '';
-    html += it('help', MI.help, 'How it works') + it('feedback', MI.feedback, 'Feedback') + it('legal', MI.legal, 'Privacy &amp; Legal') + it('othersites', MI.sites, 'Our Other Sites');
+    html += (FB_CFG ? it('stats', MI.stats, 'Stats') : '') + it('help', MI.help, 'How it works') + it('feedback', MI.feedback, 'Feedback') + it('legal', MI.legal, 'Privacy &amp; Legal') + it('othersites', MI.sites, 'Our Other Sites');
     const tools = [];
     if (typeof installPrompt !== 'undefined' && installPrompt) tools.push(it('install', MI.install, 'Install App'));
     if (!$('btnExportData').hidden) tools.push(it('export', MI.export, 'Export data', 'Back up rooms and games'));
@@ -4779,7 +4870,7 @@
     if (a === 'outcancel') { menuAskOut = false; renderMenu(); return; }
     closeMenu();
     if (a === 'outyes') { signOutGoogle(true).then(() => { renderAll(); renderMenuButton(); }); return; }
-    if (a === 'rooms' || a === 'help' || a === 'feedback' || a === 'legal' || a === 'othersites') openPage(a);
+    if (a === 'rooms' || a === 'help' || a === 'feedback' || a === 'legal' || a === 'othersites' || a === 'stats') openPage(a);
     else if (a === 'install') $('btnInstall').click();
     else if (a === 'export') $('btnExportData').click();
     else if (a === 'import') $('btnImportData').click();
@@ -7291,6 +7382,7 @@
   function showFooterPage(id) {
     document.querySelectorAll('.ft-sec').forEach(sec => { sec.hidden = true; });
     $('ft-' + id).hidden = false;
+    if (id === 'stats' && typeof loadStats === 'function') loadStats();
     if (id === 'feedback') { $('fbForm').hidden = false; $('fbDone').hidden = true; $('fbTitle').hidden = false; }
   }
   function showFooter(id) {
