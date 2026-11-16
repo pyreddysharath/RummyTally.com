@@ -3678,7 +3678,8 @@
     let roomStep = '';
     if (FB_CFG) {
       if (setup.newRoom) {
-        roomStep = line('Room', 'suRoomName', `<input type="text" id="suRoomName" maxlength="40" value="${esc(setup.roomName)}" placeholder="Name it after the occasion or place" autocomplete="off">
+        roomStep = line('Room', 'suRoomName', `<input type="text" id="suRoomName" maxlength="40" value="${esc(setup.roomName)}" placeholder="e.g. Diwali at Ravi's" autocomplete="off">
+          <p class="su-note">Name it after the occasion or place – e.g. Diwali, Goa trip, Ravi's home.</p>
           ${rooms.length ? '<button type="button" class="su-link" data-su="existing">Choose an existing room instead</button>' : ''}`);
       } else {
         roomStep = line('Room', 'suRoomSearch', `<div class="combo"><input type="text" id="suRoomSearch" autocomplete="off" role="combobox" aria-expanded="${setup.listOpen}" aria-controls="suRoomList"
