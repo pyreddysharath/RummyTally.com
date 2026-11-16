@@ -3615,7 +3615,7 @@
 
 
   const settingsHome = document.createComment('settings');   // where Game Settings lives when not setting up
-  function openSetup(mode) {
+  function openSetup(mode, restoring) {   // restoring: reopened after a refresh – keep the scroll where it was
     closeRulesEdit();   // anyone can start a game – it always goes into their own room
     if (setup) return;   // already here
     leaveHome();
@@ -3644,7 +3644,7 @@
     document.querySelectorAll('input[name="firstDealer"]').forEach(i => { i.checked = i.value === 'last'; });   // new games: last player deals first
     $('gsHelp').hidden = true; $('btnGsInfo').setAttribute('aria-expanded', 'false');
     const card = $('setupCard');
-    try { card.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) { /* ignore */ }
+    if (!restoring) { try { card.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) { /* ignore */ } }
   }
 
   $('settingsBox').querySelector('summary').addEventListener('click', e => {
@@ -7362,7 +7362,7 @@
     if (parseLink()) sc = 'game';
     if (sc === 'game' && hasOpenGame()) { atHome = false; leaveHome(); renderScreen(); }
     else if (PAGE_TITLE[sc] && (sc !== 'rooms' || FB_CFG)) openPage(sc);
-    else if (sc === 'setup') openSetup('game');
+    else if (sc === 'setup') openSetup('game', true);
     else renderScreen();
   })();
   cloudStartup();
