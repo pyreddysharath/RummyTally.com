@@ -2075,7 +2075,12 @@
   #welcomeCard .wc-menu { background: none !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; max-width: none !important; margin: 0 !important; padding: 0 12px 12px !important; }
   #welcomeCard .wc-menu .wc-cap { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 2px 6px 10px !important; }
   #welcomeCard .wc-menu .wc-cap::before, #welcomeCard .wc-menu .wc-cap::after { content: ""; flex: 1; height: 1.5px; background: var(--gold); opacity: .7; }
-  body.wc-on .tiles { margin-top: 4px; }
+  body.wc-on .tiles { margin-top: 30px; }
+  /* Home: even spacing – New Game, My Rooms / Stats, Continue (same gap as below the welcome box) */
+  .hero-foot > .tiles { margin-bottom: 0; }
+  .hero-foot > .home-pair { margin-top: 30px; }
+  .hero-foot > .home-pair[hidden] { display: none; }
+  .hero-foot > #btnResume { margin-top: 30px !important; }
   body.wc-on #tileNew { height: auto; min-height: 0; padding: 16px; flex-direction: row; gap: 10px; }
   body.wc-on #tileNew svg { width: 26px; height: 26px; margin: 0; }
   @media (max-width: 340px) { #welcomeCard .wc-top { padding: 12px 8px !important; } #welcomeCard .wc-top .wc-steps { flex-wrap: nowrap !important; gap: 3px !important; } #welcomeCard .wc-top .wc-steps span { font-size: .6rem !important; padding: 4px 6px !important; } #welcomeCard .wc-menu { padding: 0 8px 10px !important; gap: 6px !important; } #welcomeCard .wc-menu .am-item { font-size: .7rem !important; padding: 8px 4px !important; } }
@@ -4494,6 +4499,7 @@
     const anyRooms = roomCount() > 0 || Object.keys(myRooms.games).some(id => !hiddenIds.has(id));   // My Rooms and Stats only once there's something in them
     $('tileRooms').hidden = !FB_CFG || !anyRooms;
     $('tileStats').hidden = !FB_CFG || !anyRooms;
+    $('homePair').hidden = $('tileRooms').hidden && $('tileStats').hidden;   // empty row shouldn't add a gap
     $('tileNew').hidden = false;   // New Game is for everyone, view-only links too
     $('tiles').classList.add('one');
     // An ended game isn't offered as Continue (after a refresh, what this phone remembers decides until it loads)
