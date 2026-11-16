@@ -2022,6 +2022,17 @@
   .st-opts button { display: flex; align-items: baseline; justify-content: space-between; min-height: 0; padding: 8px; border: 0; border-radius: 8px; background: none; text-align: left; font: 600 .84rem Lexend, sans-serif; color: #1d2b24; }
   .st-opts button.on { background: #e3f1e8; color: #0e5a3a; }
   .st-cb .cb-chev { flex: 0 0 auto; width: 8px; height: 8px; margin: -4px 2px 0 auto; border-right: 2px solid #0e5a3a; border-bottom: 2px solid #0e5a3a; transform: rotate(45deg); }
+
+  /* Stats picker: All rooms on top, then rooms grouped like My Rooms */
+  .st-opts button.st-all { background: #0e5a3a; color: #fff; border-radius: 8px; padding: 9px 10px; font-weight: 700; margin-bottom: 2px; }
+  .st-opts button.st-all.on { box-shadow: inset 0 0 0 2px #f0c24a; }
+  .st-gh { display: flex; align-items: center; gap: 6px; margin: 10px 0 4px; padding-left: 6px; border-left: 3px solid var(--gold); font: 800 .66rem Lexend, sans-serif; letter-spacing: .07em; text-transform: uppercase; color: var(--felt); }
+  .st-grp { display: flex; flex-direction: column; }
+  .st-grp button { border-radius: 0 !important; color: #b8860b !important; }
+  .st-grp button:nth-child(odd) { background: #f3eedf; }
+  .st-grp button.on { background: #e9dfc2 !important; }
+  .st-grp button.on::after { content: "✓"; margin-left: 8px; color: #0e5a3a; font-weight: 800; }
+  .st-opts { max-height: 320px; } .st-opts button, .st-gh, .st-grp { flex-shrink: 0; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -4563,7 +4574,7 @@
         return fb.getDoc(R.game(r, g)).then(d => { if (d.exists()) games.push({ r, x: { id: g, ...d.data() } }); }).catch(() => {});
       }));
       const ids = [...new Set(games.map(e => e.r).concat(rooms))];
-      statsRooms = ids.map(r => ({ r, day: fmtDMY((myRooms.rooms[r] && (myRooms.rooms[r].createdMs || myRooms.rooms[r].at)) || Date.now()), name: (myRooms.rooms[r] && myRooms.rooms[r].name) || (Object.entries(myRooms.games).find(([k]) => k.startsWith(r + '_')) || [, {}])[1].room || 'Room' }));
+      statsRooms = ids.map(r => ({ r, own: !!(myRooms.rooms[r] && myRooms.rooms[r].role === 'owner'), day: fmtDMY((myRooms.rooms[r] && (myRooms.rooms[r].createdMs || myRooms.rooms[r].at)) || Date.now()), name: (myRooms.rooms[r] && myRooms.rooms[r].name) || (Object.entries(myRooms.games).find(([k]) => k.startsWith(r + '_')) || [, {}])[1].room || 'Room' }));
       statsGames = games;
       if (statsRoom !== 'all' && !ids.includes(statsRoom)) statsRoom = 'all';
       renderStats();
@@ -4608,9 +4619,14 @@
       const pop = $('statsPop'), q = $('statsQ'), opts = $('statsOpts');
       const fill = () => {
         const t = q.value.trim().toLowerCase();
-        const rows = [{ r: 'all', name: 'All rooms', day: '' }].concat(statsRooms)
-          .filter(o => !t || o.r === 'all' && 'all rooms'.includes(t) || (o.name + ' ' + o.day).toLowerCase().includes(t));
-        opts.innerHTML = rows.length ? rows.map(o => `<button type="button" role="option" data-sr="${esc(o.r)}" class="${o.r === statsRoom ? 'on' : ''}">${esc(o.name)}${o.day ? `<small>${o.day}</small>` : ''}</button>`).join('') : '<p class="mr-empty">No rooms match</p>';
+        const hit = o => !t || (o.name + ' ' + o.day).toLowerCase().includes(t);
+        const row = o => `<button type="button" role="option" data-sr="${esc(o.r)}" class="${o.r === statsRoom ? 'on' : ''}">${esc(o.name)}<small>${o.day}</small></button>`;
+        const grp = (title, list) => list.length ? `<div class="st-gh">${title}</div><div class="st-grp">${list.map(row).join('')}</div>` : '';
+        const mine = statsRooms.filter(o => o.own && hit(o)), shared = statsRooms.filter(o => !o.own && hit(o));
+        const all = !t || 'all rooms'.includes(t);
+        opts.innerHTML = (all ? `<button type="button" role="option" data-sr="all" class="st-all ${statsRoom === 'all' ? 'on' : ''}">All rooms</button>` : '')
+          + grp('Created by me', mine) + grp('Shared with me', shared)
+          || '<p class="mr-empty">No rooms match</p>';
       };
       btn.addEventListener('click', () => { const open = pop.hidden; pop.hidden = !open; btn.setAttribute('aria-expanded', String(open)); if (open) { q.value = ''; fill(); q.focus(); } });
       q.addEventListener('input', fill);
