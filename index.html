@@ -1879,6 +1879,14 @@
 
   /* SCOREBOARD heading: same font and colour as NEW GAME and MY ROOMS */
   .board-card h2.sb-h .sb-word { font-size: 1.15rem !important; font-weight: 700 !important; letter-spacing: .1em !important; color: #0f5a3c !important; line-height: 1.45 !important; }
+
+  /* New Game: Room and Game Name closer together */
+  .su-where > .su-line:first-of-type { margin-bottom: 4px !important; }
+  .su-where .su-note { margin-top: 2px !important; }
+  /* My Rooms: "Created by me" / "Shared with me" headed like the New Game sections (gold bar, no trailing line) */
+  .rooms-card .mr-h { gap: 8px; font-size: .76rem; font-weight: 800; letter-spacing: .07em; color: var(--felt); }
+  .rooms-card .mr-h::after { display: none; }
+  .rooms-card .mr-h::before { content: ""; width: 4px; height: 16px; border-radius: 2px; background: var(--gold); flex: 0 0 auto; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
