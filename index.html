@@ -1994,6 +1994,15 @@
   /* …and are as tall as the name next to them */
   .mr-no { width: 16px !important; height: 16px !important; font-size: .6rem !important; }
   .mr-games .mg-sp { width: 14px !important; height: 14px !important; font-size: .54rem !important; }
+
+  .st-pick { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: .78rem; color: #6b7c72; }
+  .st-pick select { flex: 1; min-width: 0; font: 600 .86rem Lexend, sans-serif; color: #0e5a3a; padding: 7px 10px; border: 1px solid #d9d1bb; border-radius: 10px; background: #fff; }
+  .st-sep { border: 0; border-top: 1px solid #e2dbc6; margin: 0 0 14px; }
+  /* My Rooms: chevron to open a room – › closed, ⌄ open */
+  .mr-tg { width: 16px !important; height: 16px !important; background: none !important; }
+  .mr-tg::after { display: none !important; }
+  .mr-tg::before { content: "" !important; position: absolute; left: 4px !important; top: 3px !important; width: 7px !important; height: 7px !important; border: solid #0e5a3a; border-width: 0 2.4px 2.4px 0; background: none !important; border-radius: 1px !important; transform: rotate(-45deg) !important; transition: transform .2s; }
+  .mr-room[open] .mr-tg::before { transform: rotate(45deg) !important; left: 4px !important; top: 1px !important; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -4515,7 +4524,7 @@
       return gameResult();
     } catch (e) { return null; } finally { state = keep; }
   }
-  let statsBusy = false;
+  let statsBusy = false, statsGames = [], statsRooms = [], statsRoom = 'all';
   async function loadStats() {
     const box = $('statsBody');
     if (!box || statsBusy) return;
@@ -4526,40 +4535,53 @@
       await cloudInit();
       const rooms = Object.keys(myRooms.rooms).filter(r => !hiddenIds.has(r));
       await Promise.all(rooms.map(r => isOpenRoom(r) ? null : prefetchRoomGames(r)));
-      rooms.forEach(r => (gamesOf(r) || []).forEach(x => games.push(x)));
+      rooms.forEach(r => (gamesOf(r) || []).forEach(x => games.push({ r, x })));
       const singles = Object.keys(myRooms.games).filter(id => !hiddenIds.has(id) && !coveredByRoom(id));
       await Promise.all(singles.map(id => {
         const [r, g] = [id.split('_')[0], id.slice(id.indexOf('_') + 1)];
-        return fb.getDoc(R.game(r, g)).then(d => { if (d.exists()) games.push({ id: g, ...d.data() }); }).catch(() => {});
+        return fb.getDoc(R.game(r, g)).then(d => { if (d.exists()) games.push({ r, x: { id: g, ...d.data() } }); }).catch(() => {});
       }));
-      const roomCount = rooms.length + new Set(singles.map(id => id.split('_')[0]).filter(r => !rooms.includes(r))).size;
-      const now = Date.now();
-      const active = games.filter(x => x.status !== 'ended' && !(((tsMs(x.updatedAt) || x.createdMs || 0) && now - (tsMs(x.updatedAt) || x.createdMs) > INACTIVE_DAYS * DAY))).length;
-      const ppl = {};   // players matched by name (ignoring case and spaces)
-      games.forEach(x => {
-        const res = resultOfDoc(x);
-        const winners = new Set(res && (res.type === 'winner' || res.type === 'declared') ? res.players.map(p => p.id) : []);
-        (Array.isArray(x.players) ? x.players : []).forEach(p => {
-          const k = String(p.name || '').trim().replace(/\s+/g, ' ').toLowerCase();
-          if (!k) return;
-          const e = ppl[k] = ppl[k] || { name: nameCase(p.name), played: 0, won: 0 };
-          e.played++;
-          if (winners.has(p.id)) e.won++;
-        });
-      });
-      const list = Object.values(ppl).sort((a, b) => b.won - a.won || (b.won / b.played) - (a.won / a.played) || b.played - a.played || a.name.localeCompare(b.name));
-      const top = list.length && list[0].won ? list[0].won : -1;
-      box.innerHTML = `<div class="st-tiles"><div class="st-t t1"><b>${roomCount}</b><small>Rooms</small></div><div class="st-t t2"><b>${games.length}</b><small>Games</small><span>${active} active</span></div><div class="st-t t3"><b>${list.length}</b><small>Players</small></div></div>
-        <div class="st-h">Players</div>
-        ${list.length ? list.map(p => {
-          const rate = p.played ? Math.round(100 * p.won / p.played) : 0;
-          return `<div class="st-p"><span class="st-av">${esc(p.name.charAt(0).toUpperCase())}</span><span class="st-nm"><b>${esc(p.name)}${p.won === top ? ' 🏆' : ''}</b><span>Played ${p.played} · Win rate ${rate}%<i style="width:${Math.round(rate * .6)}px"></i></span></span><span class="st-w"><b>${p.won}</b><small>${p.won === 1 ? 'win' : 'wins'}</small></span></div>`;
-        }).join('') : '<p class="mr-empty">No players yet</p>'}
-        <p class="st-note">Counts every game in My Rooms. Players are matched by name. A win is a game that ended with that player as the winner.</p>`;
+      const ids = [...new Set(games.map(e => e.r).concat(rooms))];
+      statsRooms = ids.map(r => ({ r, name: (myRooms.rooms[r] && myRooms.rooms[r].name) || (Object.entries(myRooms.games).find(([k]) => k.startsWith(r + '_')) || [, {}])[1].room || 'Room' }));
+      statsGames = games;
+      if (statsRoom !== 'all' && !ids.includes(statsRoom)) statsRoom = 'all';
+      renderStats();
       box.dataset.done = '1';
     } catch (e) {
       if (!box.dataset.done) box.innerHTML = '<p class="mr-empty">Couldn\'t load the stats – check your connection.</p>';
     } finally { statsBusy = false; }
+  }
+  function renderStats() {
+    const box = $('statsBody');
+    if (!box) return;
+    const games = statsGames.filter(e => statsRoom === 'all' || e.r === statsRoom).map(e => e.x);
+    const roomCount = statsRoom === 'all' ? statsRooms.length : 1;
+    const now = Date.now();
+    const active = games.filter(x => x.status !== 'ended' && !(((tsMs(x.updatedAt) || x.createdMs || 0) && now - (tsMs(x.updatedAt) || x.createdMs) > INACTIVE_DAYS * DAY))).length;
+    const ppl = {};   // players matched by name (ignoring case and spaces)
+    games.forEach(x => {
+      const res = resultOfDoc(x);
+      const winners = new Set(res && (res.type === 'winner' || res.type === 'declared') ? res.players.map(p => p.id) : []);
+      (Array.isArray(x.players) ? x.players : []).forEach(p => {
+        const k = String(p.name || '').trim().replace(/\s+/g, ' ').toLowerCase();
+        if (!k) return;
+        const e = ppl[k] = ppl[k] || { name: nameCase(p.name), played: 0, won: 0 };
+        e.played++;
+        if (winners.has(p.id)) e.won++;
+      });
+    });
+    const list = Object.values(ppl).sort((a, b) => b.won - a.won || (b.won / b.played) - (a.won / a.played) || b.played - a.played || a.name.localeCompare(b.name));
+    const top = list.length && list[0].won ? list[0].won : -1;
+    const pick = statsRooms.length > 1 ? `<label class="st-pick"><span>Show</span><select id="statsRoom"><option value="all">All rooms</option>${statsRooms.map(o => `<option value="${esc(o.r)}" ${o.r === statsRoom ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select></label>` : '';
+    box.innerHTML = `${pick}<div class="st-tiles"><div class="st-t t1"><b>${roomCount}</b><small>${roomCount === 1 ? 'Room' : 'Rooms'}</small></div><div class="st-t t2"><b>${games.length}</b><small>Games</small><span>${active} active</span></div><div class="st-t t3"><b>${list.length}</b><small>Players</small></div></div>
+      <hr class="st-sep">
+      <div class="st-h">Players</div>
+      ${list.length ? list.map(p => {
+        const rate = p.played ? Math.round(100 * p.won / p.played) : 0;
+        return `<div class="st-p"><span class="st-av">${esc(p.name.charAt(0).toUpperCase())}</span><span class="st-nm"><b>${esc(p.name)}${p.won === top ? ' 🏆' : ''}</b><span>Played ${p.played} · Win rate ${rate}%<i style="width:${Math.round(rate * .6)}px"></i></span></span><span class="st-w"><b>${p.won}</b><small>${p.won === 1 ? 'win' : 'wins'}</small></span></div>`;
+      }).join('') : '<p class="mr-empty">No players yet</p>'}`;
+    const sel = $('statsRoom');
+    if (sel) sel.addEventListener('change', () => { statsRoom = sel.value; renderStats(); });
   }
 
   function renderRooms() {
