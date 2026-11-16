@@ -3883,7 +3883,7 @@
     if (!setup) { card.hidden = true; card.innerHTML = ''; return; }
     card.hidden = false;
     if (full || !$('suBody')) {
-      card.innerHTML = `<h2 id="suTitle"></h2><div id="suBody"></div>
+      card.innerHTML = `<h2 id="suTitle"></h2><div id="suBody"></div><div class="msg" id="suPMsg"></div>
         <div class="su-step su-sec su-setup" id="suSettingsSlot"></div>
         <div class="msg" id="suMsg"></div><div class="su-actions" id="suFoot"></div>`;
     }
@@ -3965,7 +3965,7 @@
     if (!name) { f.focus(); return; }
     const taken = setup.added.concat(setup.useExisting ? setup.prevPlayers.map(p => p.name) : []).map(n => n.toLowerCase());
     if (taken.includes(name.toLowerCase())) { setMsg('suMsg', `"${name}" is already in the list.`, 'err'); f.select(); return; }
-    setMsg('suMsg', '', '');
+    setMsg('suMsg', '', ''); if ($('suPMsg')) setMsg('suPMsg', '', '');
     if (setup.useExisting && setup.prevAvail) { setup.prevPlayers.push({ id: nextIdFor(setup.prevPlayers), name }); setup.orderTaps = []; }
     else setup.added.push(name);
     f.value = '';
@@ -4020,8 +4020,10 @@
     if (players.length < 2) {
       setup.addOpen = true;
       renderSetup();
-      setMsg('suMsg', players.length ? 'Add one more player – a game needs at least 2.' : 'Add at least 2 players to start.', 'err');
-      try { $('suPlayerName').focus(); } catch (e) { /* ignore */ }
+      setMsg('suMsg', '', '');
+      setMsg('suPMsg', players.length ? 'Add one more player – a game needs at least 2.' : 'Add at least 2 players to start.', 'err');   // right under Players
+      try { $('suPlayerName').focus({ preventScroll: true }); } catch (e) { /* ignore */ }
+      try { (document.querySelector('#suBody .su-players') || $('suPMsg')).scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { /* ignore */ }
       return;
     }
     atHome = false;   // the new game's screen comes next
