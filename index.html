@@ -3689,7 +3689,7 @@
             placeholder="Search rooms" value="${setup.listOpen ? esc(setup.search) : sel ? esc(sel.name) : ''}"><span class="cb-chev"></span></div>
           <ul class="combo-list" id="suRoomList" role="listbox" ${setup.listOpen ? '' : 'hidden'}></ul>
           <button type="button" class="su-link plain" data-su="newroom">＋ Create a new room</button>
-          ${sel && !(online && online.roomId === sel.id) ? '<button type="button" class="su-link su-link2" data-su="continue">Continue this room\'s last game</button>' : ''}`);
+          ${sel && !(online && online.roomId === sel.id) && !(!online && myRooms.current && myRooms.current.roomId === sel.id) ? '<button type="button" class="su-link su-link2" data-su="continue">Continue this room\'s last game</button>' : ''}`);
       }
     }
     const gameStep = line('Game', 'suGameName', `<input type="text" id="suGameName" maxlength="50" value="${esc(setup.gameName)}" autocomplete="off">`);
