@@ -1914,6 +1914,23 @@
   .mr-games li.mg-full { display: block; white-space: normal !important; padding: 2px 8px 6px 20px !important; font-size: .8rem; font-weight: 600; color: var(--felt); line-height: 1.35; border-top: 0 !important; }
   .mr-games li.mg-full::before { display: none; }
   .mr-games li.mg-full + li { border-top: 1px solid #e2dbc6; }
+
+  /* Welcome banner: cream with a gold bar, live on every device */
+  .card.welcome-card { background: none !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; text-align: left; }
+  .welcome-card .wc-top { background: #fffaf0; border: 1px solid #efdcab; border-left: 4px solid var(--gold); border-radius: 16px; padding: 16px 16px 14px; margin-bottom: 12px; }
+  .welcome-card .wc-top .wc-h { margin: 0; font-size: 1.2rem !important; font-weight: 800; color: #0e5a3a; }
+  .welcome-card .wc-top .wc-h b { color: #0e5a3a; }
+  .welcome-card .wc-top .wc-h b.g { color: #b8860b; }
+  .welcome-card .wc-top .wc-online, .welcome-card .wc-top .wc-local { margin: 6px 0 0; font-size: .86rem; line-height: 1.4; color: #4c5a52; }
+  .welcome-card .wc-dev { display: flex; gap: 10px; align-items: flex-end; margin: 12px 0 2px; color: #0e5a3a; }
+  .welcome-card .wc-dev[hidden] { display: none; }
+  .welcome-card .wc-dev svg { fill: none; stroke: currentColor; stroke-width: 1.8; }
+  .welcome-card .wc-top .wc-steps { justify-content: flex-start !important; gap: 6px !important; margin: 12px 0 0 !important; }
+  .welcome-card .wc-top .wc-steps { flex-wrap: nowrap !important; gap: 5px !important; }
+  .welcome-card .wc-top .wc-steps span { background: #0e5a3a !important; color: #fff !important; font-size: .68rem !important; font-weight: 700 !important; padding: 5px 8px !important; border-radius: 999px !important; white-space: nowrap; }
+  .welcome-card .wc-menu { margin-left: 0 !important; margin-right: 0 !important; max-width: none !important; }
+  @media (max-width: 340px) { .welcome-card .wc-top .wc-steps { flex-wrap: wrap !important; } }
+  .welcome-card .wc-top .wc-steps span[hidden] { display: none; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -1963,10 +1980,13 @@
 
   <!-- Before the first game -->
   <section class="card welcome-card" id="welcomeCard" hidden>
-    <p class="wc-h">Welcome to <b>Rummy</b><b class="g">Tally</b></p>
-    <p class="wc-online" id="wcOnline" hidden>Live scores on every phone.</p>
-    <p class="wc-local" id="wcLocal">Every round's score in one place.</p>
-    <p class="wc-steps"><span class="s1" id="wcStep1">① Create room &amp; game</span><span class="s2">② Add players</span><span class="s3">③ Play</span></p>
+    <div class="wc-top">
+      <p class="wc-h">Welcome to <b>Rummy</b><b class="g">Tally</b></p>
+      <p class="wc-online" id="wcOnline" hidden>One scoreboard, live on every device – phone, tablet or computer.</p>
+      <p class="wc-local" id="wcLocal">Every round's score in one place.</p>
+      <div class="wc-dev" id="wcDev" hidden aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/></svg><svg viewBox="0 0 24 24" width="24" height="24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M11 18h2"/></svg><svg viewBox="0 0 24 24" width="28" height="24"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19h20"/></svg></div>
+      <p class="wc-steps"><span class="s1" id="wcStep1">1 Create room &amp; game</span><span class="s2">2 Add players</span><span class="s3">3 Play</span></p>
+    </div>
     <div class="wc-menu" id="wcSignIn" hidden>
       <div class="wc-cap">Played before?</div>
       <button type="button" class="am-item" data-acct="signin"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21.6 10.2H12v3.9h5.5c-.5 2.5-2.7 4.3-5.5 4.3a6.4 6.4 0 1 1 4.1-11.3l2.9-2.8A10.4 10.4 0 1 0 22.4 12c0-.6-.1-1.2-.2-1.8z"/></svg><span>Sign in with Google<small>Bring back your rooms</small></span></button>
@@ -3993,6 +4013,7 @@
     document.body.classList.toggle('no-game', !hasGame);
     $('welcomeCard').hidden = !fresh || !!setup;
     $('wcOnline').hidden = !FB_CFG;
+    $('wcDev').hidden = !FB_CFG;
     $('wcLocal').hidden = !!FB_CFG;
     $('wcStep1').hidden = !FB_CFG;
     const rooms = roomCount();
