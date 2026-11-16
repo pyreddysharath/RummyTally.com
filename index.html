@@ -1575,8 +1575,8 @@
   #suSettingsSlot .gsf .gs-row:first-child { padding-top: 2px; }
   /* Cancel beside Start: a quiet outlined button */
   .setup-card .su-actions { flex-direction: row; align-items: stretch; gap: 10px; }
-  .setup-card .su-actions .su-go { flex: 2 1 0; order: 2; }
-  .setup-card .su-actions .su-cancel { flex: 1 1 0; order: 1; text-decoration: none; border: 1.5px solid #d6e0d8; background: #fff; border-radius: 16px;
+  .setup-card .su-actions .su-go { flex: 2 1 0; order: 1; }
+  .setup-card .su-actions .su-cancel { flex: 1 1 0; order: 2; text-decoration: none; border: 1.5px solid #d6e0d8; background: #fff; border-radius: 16px;
     color: var(--text); font-weight: 600; font-size: .95rem; padding: 0 12px; min-height: 52px; }
   .setup-card .su-actions .su-cancel:hover { background: #f4f7f4; }
 
@@ -2045,6 +2045,7 @@
   .st-tbl td { padding: 8px; text-align: right; border-bottom: 1px solid #efe9da; color: #1d2b24; }
   .st-tbl th:first-child, .st-tbl td:first-child { text-align: left; padding-left: 4px; }
   .st-tbl td:first-child { font-weight: 700; color: #0e5a3a; overflow-wrap: anywhere; }
+  .welcome-card .wc-dev { justify-content: center; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -2096,7 +2097,7 @@
   <section class="card welcome-card" id="welcomeCard" hidden>
     <div class="wc-top">
       <p class="wc-h">Welcome to <b>Rummy</b><b class="g">Tally</b></p>
-      <p class="wc-online" id="wcOnline" hidden>One scoreboard, live on every device – phone, tablet or computer.</p>
+      <p class="wc-online" id="wcOnline" hidden>One scoreboard, live on every device.</p>
       <p class="wc-local" id="wcLocal">Every round's score in one place.</p>
       <div class="wc-dev" id="wcDev" hidden aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/></svg><svg viewBox="0 0 24 24" width="24" height="24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M11 18h2"/></svg><svg viewBox="0 0 24 24" width="28" height="24"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19h20"/></svg></div>
       <p class="wc-steps"><span class="s1" id="wcStep1">1 Create room &amp; game</span><span class="s2">2 Add players</span><span class="s3">3 Play</span></p>
@@ -4026,7 +4027,7 @@
       askKeepAwake();
       closeSetup();
       if (created) { roomPanel = 'links'; renderRoomCard(); }
-      setTimeout(() => { try { document.querySelector('.board-card').scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (err) { /* ignore */ } }, 400);
+      setTimeout(() => { try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (err) { /* ignore */ } }, 400);   // the new game from the top
     } catch (err) {
       console.error(err);
       if (!setup) return;
@@ -4123,8 +4124,12 @@
 
   // Who sees what: a brand-new visitor gets the welcome and the install button only
   function isNewUser() {
-    return !online && !roomCount() && !state.players.length && !state.rounds.length && !state.archive.length
+    const fresh = !online && !roomCount() && !state.players.length && !state.rounds.length && !state.archive.length
       && !(typeof isGoogle === 'function' && isGoogle());
+    // Once someone has played, they're never "new" again – even after deleting every room
+    let played = false;
+    try { played = localStorage.getItem('rummy-played') === '1'; if (!fresh && !played) { localStorage.setItem('rummy-played', '1'); played = true; } } catch (e) { /* ignore */ }
+    return fresh && !played;
   }
   function renderGameVisibility() {
     const hasGame = !!online || state.players.length > 0 || state.rounds.length > 0 || addOpen;
@@ -4452,8 +4457,9 @@
     $('btnRoomsNav').classList.toggle('on', page === 'rooms');
     $('btnNewGame').classList.toggle('on', !!setup);
     // Home: the big buttons, and a way back into the open game
-    $('tileRooms').hidden = !FB_CFG;
-    $('tileStats').hidden = !FB_CFG;
+    const anyRooms = roomCount() > 0 || Object.keys(myRooms.games).some(id => !hiddenIds.has(id));   // My Rooms and Stats only once there's something in them
+    $('tileRooms').hidden = !FB_CFG || !anyRooms;
+    $('tileStats').hidden = !FB_CFG || !anyRooms;
     $('tileNew').hidden = false;   // New Game is for everyone, view-only links too
     $('tiles').classList.add('one');
     // An ended game isn't offered as Continue (after a refresh, what this phone remembers decides until it loads)
@@ -4955,7 +4961,7 @@
   function renderMenu() {
     const it = (act, icon, label, sub) => `<button type="button" class="am-item" role="menuitem" data-menu="${act}">${icon}<span>${label}${sub ? `<small>${sub}</small>` : ''}</span></button>`;
     let html = '';
-    html += (FB_CFG ? it('stats', MI.stats, 'Stats') : '') + it('help', MI.help, 'How it works') + it('feedback', MI.feedback, 'Feedback') + it('legal', MI.legal, 'Privacy &amp; Legal') + it('othersites', MI.sites, 'Our Other Sites');
+    html += (FB_CFG && (roomCount() > 0 || Object.keys(myRooms.games).length) ? it('stats', MI.stats, 'Stats') : '') + it('help', MI.help, 'How it works') + it('feedback', MI.feedback, 'Feedback') + it('legal', MI.legal, 'Privacy &amp; Legal') + it('othersites', MI.sites, 'Our Other Sites');
     const tools = [];
     if (typeof installPrompt !== 'undefined' && installPrompt) tools.push(it('install', MI.install, 'Install App'));
     if (!$('btnExportData').hidden) tools.push(it('export', MI.export, 'Export data', 'Back up rooms and games'));
