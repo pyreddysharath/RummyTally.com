@@ -1931,6 +1931,10 @@
   .welcome-card .wc-menu { margin-left: 0 !important; margin-right: 0 !important; max-width: none !important; }
   @media (max-width: 340px) { .welcome-card .wc-top .wc-steps { flex-wrap: wrap !important; } }
   .welcome-card .wc-top .wc-steps span[hidden] { display: none; }
+
+  /* My Rooms: inactive games (ended, or not played for a couple of days) in grey; active games stay green */
+  .mr-games li.idle .mg-name, .mr-games li.idle .mg-name * { color: #8a948e !important; }
+  .mr-games li.idle .mg-sp { color: #c9c2ae; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -4223,6 +4227,7 @@
   const roomsExpanded = new Set();
   const roomTool = {};          // room id -> true when its links are showing
   const gameTool = {};          // room_game id -> true when that game's links are showing
+  const INACTIVE_DAYS = 2;
   const gameFull = {};          // room_game id -> true when the game's full name is showing (tap its ♠)
   const otherRoomGames = {};    // games of each room, fetched when its section is expanded
   const otherRoomDocs = {};     // room documents (name, deletion settings) for rooms that aren't open
@@ -4531,8 +4536,10 @@
         const gt = gameTitle(x.createdMs, x.seq, x.gameName);
         const ren = mrEditing('game', id, x.id);
         const fk = id + '_' + x.id;
-        return `<li class="${here ? 'here' : ''}"><button type="button" class="mg-sp ${gameFull[fk] ? 'on' : ''}" data-mr="gfull" data-id="${id}" data-g="${x.id}" aria-expanded="${!!gameFull[fk]}" title="Show the full name" aria-label="Show the full name">♠</button>${ren ? mrEditor(x.gameName || gt, 50) : `<button type="button" class="mg-name" data-mr="opengameof" data-id="${id}" data-g="${x.id}"><span class="mg-nt">${esc(gt)}</span>${/\d{4}/.test(gt) ? '' : `<span class="mg-date">${fmtDMY(x.createdMs || Date.now())}</span>`}</button>`}
-          ${x.status === 'ended' ? '<span class="mg-tag">Ended</span>' : ''}
+        // Inactive: ended, or no score changes for INACTIVE_DAYS – shown greyed (still opens and plays as normal)
+        const last = tsMs(x.updatedAt) || x.createdMs || 0;
+        const idle = x.status === 'ended' || (last && Date.now() - last > INACTIVE_DAYS * DAY);
+        return `<li class="${here ? 'here' : ''}${idle ? ' idle' : ''}"><button type="button" class="mg-sp ${gameFull[fk] ? 'on' : ''}" data-mr="gfull" data-id="${id}" data-g="${x.id}" aria-expanded="${!!gameFull[fk]}" title="Show the full name" aria-label="Show the full name">♠</button>${ren ? mrEditor(x.gameName || gt, 50) : `<button type="button" class="mg-name" data-mr="opengameof" data-id="${id}" data-g="${x.id}"><span class="mg-nt">${esc(gt)}</span>${/\d{4}/.test(gt) ? '' : `<span class="mg-date">${fmtDMY(x.createdMs || Date.now())}</span>`}</button>`}
           ${canShare ? `<button type="button" class="ico-btn share ${gameTool[id + '_' + x.id] ? 'on' : ''}" data-mr="glinks" data-id="${id}" data-g="${x.id}" title="Share this game" aria-label="Share this game">${I_SHARE}</button>` : ''}
           ${canShare && !ren ? `<button type="button" class="ico-btn pen" data-mr="rengame" data-id="${id}" data-g="${x.id}" title="Rename game" aria-label="Rename game">${I_PEN}</button>` : ''}
           ${own ? `<button type="button" class="ico-btn del" data-mr="delgamein" data-id="${id}" data-g="${x.id}" title="Delete game" aria-label="Delete game">${I_TRASH}</button>` : ''}</li>
