@@ -1868,6 +1868,14 @@
   .mr-list > .mr-room { padding: 2px 8px !important; margin: 0 -8px !important; }
   .mr-list > .mr-room:nth-child(odd) { background: #f3eedf !important; }
   .mr-games li + li { border-top: 1px solid #e2dbc6; }
+
+  /* Main pages share one heading: capitals, centred, gold lines either side (NEW GAME, MY ROOMS, SCOREBOARD) */
+  body.scr-setup .setup-card h2#suTitle { justify-content: center !important; gap: 14px; }
+  body.scr-setup .setup-card h2#suTitle::before, body.scr-setup .setup-card h2#suTitle::after,
+  .rooms-card > .pg-h::before, .rooms-card > .pg-h::after { content: ""; flex: 1; height: 1.5px; background: linear-gradient(90deg, transparent, var(--gold)); }
+  body.scr-setup .setup-card h2#suTitle::after, .rooms-card > .pg-h::after { background: linear-gradient(90deg, var(--gold), transparent); }
+  .rooms-card > .pg-h { display: flex; align-items: center; gap: 14px; margin: 0 0 14px; font-size: 1.15rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #0f5a3c; line-height: 1.45; }
+  .rooms-card > .pg-h + .mr-h { margin-top: 0 !important; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -4386,7 +4394,7 @@
         <div class="mr-body"><div class="mr-sub">Games</div><ul class="mr-games">${rows}</ul></div></details>`;
     }).join('');
     card.innerHTML = `
-      <div class="ft-title">My Rooms</div><div class="mr-h">Created by me</div>${mine.length ? '<div class="mr-list">' + mine.map(sec).join('') + '</div>' : '<p class="mr-empty">None</p>'}
+      <h2 class="pg-h">My Rooms</h2><div class="mr-h">Created by me</div>${mine.length ? '<div class="mr-list">' + mine.map(sec).join('') + '</div>' : '<p class="mr-empty">None</p>'}
       <div class="mr-h mr-h2">Shared with me</div>${shared.length || one ? '<div class="mr-list">' + shared.map(sec).join('') + one + '</div>' : '<p class="mr-empty">None</p>'}
       <div class="msg" id="mrMsg"></div>`;
     if (keep && keep.t) { $('mrMsg').textContent = keep.t; $('mrMsg').className = keep.c; }
