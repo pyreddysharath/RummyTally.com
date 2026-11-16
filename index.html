@@ -1906,6 +1906,14 @@
   .mr-games .mg-name { color: var(--felt) !important; }   /* every game in green */
   .sb-setup-ed { background: #f0c24a !important; border-color: #f0c24a !important; color: #2b1f00 !important; }
   .sb-setup-ed.on { background: #d6a62c !important; border-color: #d6a62c !important; }
+
+  /* My Rooms: tap a game's ♠ to see its full name and date (long names are shortened with …) */
+  .mr-games li:not(.mg-full):not(.mg-links)::before { display: none; }
+  .mr-games .mg-sp { flex: 0 0 auto; background: none; border: 0; padding: 4px 2px; margin: 0; min-height: 0; color: var(--gold); font-size: .8rem; line-height: 1; cursor: pointer; }
+  .mr-games .mg-sp.on { color: var(--felt); }
+  .mr-games li.mg-full { display: block; white-space: normal !important; padding: 2px 8px 6px 20px !important; font-size: .8rem; font-weight: 600; color: var(--felt); line-height: 1.35; border-top: 0 !important; }
+  .mr-games li.mg-full::before { display: none; }
+  .mr-games li.mg-full + li { border-top: 1px solid #e2dbc6; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -4194,6 +4202,7 @@
   const roomsExpanded = new Set();
   const roomTool = {};          // room id -> true when its links are showing
   const gameTool = {};          // room_game id -> true when that game's links are showing
+  const gameFull = {};          // room_game id -> true when the game's full name is showing (tap its ♠)
   const otherRoomGames = {};    // games of each room, fetched when its section is expanded
   const otherRoomDocs = {};     // room documents (name, deletion settings) for rooms that aren't open
   const roomCardHome = document.createComment('room card');
@@ -4500,11 +4509,13 @@
         const here = online && online.roomId === id && online.gameId === x.id;
         const gt = gameTitle(x.createdMs, x.seq, x.gameName);
         const ren = mrEditing('game', id, x.id);
-        return `<li class="${here ? 'here' : ''}">${ren ? mrEditor(x.gameName || gt, 50) : `<button type="button" class="mg-name" data-mr="opengameof" data-id="${id}" data-g="${x.id}"><span class="mg-nt">${esc(gt)}</span>${/\d{4}/.test(gt) ? '' : `<span class="mg-date">${fmtDMY(x.createdMs || Date.now())}</span>`}</button>`}
+        const fk = id + '_' + x.id;
+        return `<li class="${here ? 'here' : ''}"><button type="button" class="mg-sp ${gameFull[fk] ? 'on' : ''}" data-mr="gfull" data-id="${id}" data-g="${x.id}" aria-expanded="${!!gameFull[fk]}" title="Show the full name" aria-label="Show the full name">♠</button>${ren ? mrEditor(x.gameName || gt, 50) : `<button type="button" class="mg-name" data-mr="opengameof" data-id="${id}" data-g="${x.id}"><span class="mg-nt">${esc(gt)}</span>${/\d{4}/.test(gt) ? '' : `<span class="mg-date">${fmtDMY(x.createdMs || Date.now())}</span>`}</button>`}
           ${x.status === 'ended' ? '<span class="mg-tag">Ended</span>' : ''}
           ${canShare ? `<button type="button" class="ico-btn share ${gameTool[id + '_' + x.id] ? 'on' : ''}" data-mr="glinks" data-id="${id}" data-g="${x.id}" title="Share this game" aria-label="Share this game">${I_SHARE}</button>` : ''}
           ${canShare && !ren ? `<button type="button" class="ico-btn pen" data-mr="rengame" data-id="${id}" data-g="${x.id}" title="Rename game" aria-label="Rename game">${I_PEN}</button>` : ''}
           ${own ? `<button type="button" class="ico-btn del" data-mr="delgamein" data-id="${id}" data-g="${x.id}" title="Delete game" aria-label="Delete game">${I_TRASH}</button>` : ''}</li>
+          ${gameFull[fk] && !ren ? `<li class="mg-full">${esc(gt)}${/\d{4}/.test(gt) ? '' : ' · ' + fmtDMY(x.createdMs || Date.now())}</li>` : ''}
           ${gameTool[id + '_' + x.id] ? `<li class="mg-links"><div class="mr-tool lk-box" id="mgl-${id}_${x.id}">Loading…</div></li>` : ''}`;
       }).join('')}</ul>` : '<p class="mr-empty">None</p>')
       : '<p class="mr-empty">Loading…</p>';
@@ -4604,6 +4615,11 @@
     else if (a === 'links') {
       roomTool[id] = !roomTool[id];
       if (roomTool[id]) roomsExpanded.add(id);
+      renderRooms();
+    }
+    else if (a === 'gfull') {
+      const key = id + '_' + b.dataset.g;
+      gameFull[key] = !gameFull[key];
       renderRooms();
     }
     else if (a === 'glinks') {
