@@ -2046,6 +2046,18 @@
   .st-tbl th:first-child, .st-tbl td:first-child { text-align: left; padding-left: 4px; }
   .st-tbl td:first-child { font-weight: 700; color: #0e5a3a; overflow-wrap: anywhere; }
   .welcome-card .wc-dev { justify-content: center; }
+
+  /* Welcome: centred text; "Played before?" as two compact pills on one row */
+  .welcome-card .wc-top { text-align: center; }
+  .welcome-card .wc-top .wc-steps { justify-content: center !important; }
+  .welcome-card .wc-menu { display: flex !important; flex-wrap: wrap; gap: 8px; align-items: center; padding: 0 12px 12px !important; }
+  .welcome-card .wc-menu .am-item[data-acct="signin"] { flex: 1.35 1 0; }
+  @media (max-width: 380px) { .welcome-card .wc-menu .am-item { font-size: .74rem !important; padding: 9px 6px !important; } }
+  .welcome-card .wc-menu .wc-cap { flex-basis: 100%; text-align: center; }
+  .welcome-card .wc-menu .am-sep { display: none !important; }
+  .welcome-card .wc-menu .am-item small { display: none !important; }
+  .welcome-card .wc-menu .am-item { flex: 1 1 0; min-width: 0; box-sizing: border-box; justify-content: center; gap: 6px !important; white-space: nowrap; font-size: .8rem !important; border: 1px solid #e2dbc6 !important; border-radius: 999px !important; padding: 9px 8px !important; min-height: 0 !important; margin: 0 !important; background: #fff !important; }
+  .welcome-card .wc-menu .am-item svg { width: 16px !important; height: 16px !important; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
