@@ -2133,6 +2133,14 @@
           <button type="button" class="am-item" data-acct="import"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7 9l5-5 5 5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Import data<small>From a backup file</small></span></button>
         </div>
       </section>
+      <script>/* new visitor: show the welcome box straight away, so New Game doesn't jump down once the app loads */
+        try { const ls = localStorage, j = k => JSON.parse(ls.getItem(k) || 'null'), st = j('rummy-scoreboard-v1') || {}, rm = j('rummy-rooms-v1') || {};
+          const fresh = ls.getItem('rummy-played') !== '1' && !ls.getItem('rummy-menu-ava') && !new URLSearchParams(location.search).get('r')
+            && !(st.players || []).length && !(st.rounds || []).length && !(st.archive || []).length && !Object.keys(rm.rooms || {}).length;
+          if (fresh) { const fb = !!(window.RUMMY_FIREBASE_CONFIG && window.RUMMY_FIREBASE_CONFIG.apiKey), $e = id => document.getElementById(id);
+            $e('welcomeCard').hidden = false; document.body.classList.add('wc-on');
+            ['wcOnline', 'wcDev', 'wcStep1', 'wcSignIn'].forEach(id => { $e(id).hidden = !fb; }); $e('wcLocal').hidden = fb; }
+        } catch (e) { /* the app sorts it out once loaded */ }</script>
       <div class="tiles" id="tiles">
         <button class="tile tile-game" id="tileNew" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="11" height="15" rx="2" transform="rotate(-8 8.5 11.5)" fill="none" stroke="currentColor" stroke-width="2"/><rect x="9" y="6" width="11" height="15" rx="2" transform="rotate(6 14.5 13.5)" fill="currentColor" opacity=".9"/><path d="M14.5 10.5v6M11.5 13.5h6" stroke="#f0c24a" stroke-width="2" stroke-linecap="round"/></svg>New Game</button>
       </div>
