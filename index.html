@@ -2033,6 +2033,11 @@
   .st-grp button.on { background: #e9dfc2 !important; }
   .st-grp button.on::after { content: "✓"; margin-left: 8px; color: #0e5a3a; font-weight: 800; }
   .st-opts { max-height: 320px; } .st-opts button, .st-gh, .st-grp { flex-shrink: 0; }
+
+  /* Stats is a page (back arrow), headed like NEW GAME / MY ROOMS / SCOREBOARD */
+  #ft-stats > .pg-h { display: flex; align-items: center; gap: 14px; margin: 0 0 14px; font-size: 1.15rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #0f5a3c; line-height: 1.45; }
+  #ft-stats > .pg-h::before, #ft-stats > .pg-h::after { content: ""; flex: 1; height: 1.5px; background: linear-gradient(90deg, transparent, var(--gold)); }
+  #ft-stats > .pg-h::after { background: linear-gradient(90deg, var(--gold), transparent); }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -2311,7 +2316,7 @@
     </div>
 
     <div class="ft-sec" id="ft-stats" hidden>
-      <div class="ft-title">Stats</div>
+      <h2 class="pg-h">Stats</h2>
       <div id="statsBody"><p class="mr-empty">Loading…</p></div>
     </div>
 
@@ -4428,7 +4433,7 @@
     b.toggle('scr-setup', scr === 'setup');
     b.toggle('scr-game', scr === 'game');
     b.toggle('nav-mode', !home);
-    const info = !!page && page !== 'rooms';
+    const info = !!page && page !== 'rooms' && page !== 'stats';   // Stats and My Rooms are pages with a back arrow
     $('btnBack').hidden = home || info;   // menu pages (How it works, Feedback, Privacy & Legal, Our Other Sites) close with their own ✕
     // Every page but home shows the RummyTally name at the top (tap it to go home)
     $('tbTitle').textContent = '';
@@ -4508,7 +4513,7 @@
     navHistory = false; if (curScreen() !== 'home') goHome(true);
   });
   // Menu pages are like pop-ups: a ✕ at the right of their title closes them and returns to where you were
-  document.querySelectorAll('.ft-sec > .ft-title').forEach(t => t.insertAdjacentHTML('beforeend', `<button type="button" class="close-x pg-x" data-pgclose title="Close" aria-label="Close">${I_X}</button>`));
+  document.querySelectorAll('.ft-sec:not(#ft-stats) > .ft-title').forEach(t => t.insertAdjacentHTML('beforeend', `<button type="button" class="close-x pg-x" data-pgclose title="Close" aria-label="Close">${I_X}</button>`));
   document.addEventListener('click', e => { if (e.target.closest('[data-pgclose]')) $('btnBack').click(); });
   $('btnBack').addEventListener('click', () => {
     if (infoOver && page) { try { history.back(); } catch (e) { closeInfoPage(); } return; }
@@ -4628,6 +4633,11 @@
           + grp('Created by me', mine) + grp('Shared with me', shared)
           || '<p class="mr-empty">No rooms match</p>';
       };
+      if (!renderStats.outside) {   // a tap outside the picker closes it
+        renderStats.outside = true;
+        document.addEventListener('click', e => { const pp = $('statsPop'); if (pp && !pp.hidden && !e.target.closest('.st-combo')) { pp.hidden = true; const b2 = $('statsPickBtn'); if (b2) b2.setAttribute('aria-expanded', 'false'); } });
+        document.addEventListener('keydown', e => { const pp = $('statsPop'); if (e.key === 'Escape' && pp && !pp.hidden) { pp.hidden = true; } });
+      }
       btn.addEventListener('click', () => { const open = pop.hidden; pop.hidden = !open; btn.setAttribute('aria-expanded', String(open)); if (open) { q.value = ''; fill(); q.focus(); } });
       q.addEventListener('input', fill);
       opts.addEventListener('click', e => { const o = e.target.closest('[data-sr]'); if (!o) return; statsRoom = o.dataset.sr; renderStats(); });
