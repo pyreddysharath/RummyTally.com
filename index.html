@@ -6184,6 +6184,7 @@
   /* ---------- Entering and leaving a room ---------- */
   async function joinFromLink(L) {
     history.replaceState(null, '', location.pathname);   // keep the secret key out of the address bar
+    const hadRoom = !!myRooms.rooms[L.r], hadGame = !!myRooms.games[L.r + '_' + L.g], prevCurrent = myRooms.current;
     try {
       await cloudInit();
       if (L.scope === 'room') {
@@ -6210,8 +6211,16 @@
       }
     } catch (err) {
       console.error(err);
+      // Undo the half-join, then show Home with the note (not a blank scoreboard)
+      if (L.scope === 'room' && !hadRoom) delete myRooms.rooms[L.r];
+      if (L.scope === 'game' && !hadGame) delete myRooms.games[L.r + '_' + L.g];
+      if (online && online.roomId === L.r) leaveRoom();
+      myRooms.current = prevCurrent;   // the game that was open before still opens from Home
+      saveRooms();
       renderRoomCard();
+      goHome();
       linkNote('This link isn\'t valid anymore. Ask for a new one.');
+      return false;
     }
   }
 
@@ -7278,7 +7287,7 @@
     renderRoomCard();
     if (!FB_CFG) return;
     const L = parseLink();
-    if (L) { atHome = false; leaveHome(); await joinFromLink(L); renderScreen(); return; }
+    if (L) { atHome = false; leaveHome(); const ok = await joinFromLink(L); renderScreen(); if (ok !== false) return; }   // a bad link falls through to the game that was open
     const c = myRooms.current;
     if (c) {
       const en = c.scope === 'game' ? myRooms.games[c.roomId + '_' + c.gameId] : myRooms.rooms[c.roomId];
