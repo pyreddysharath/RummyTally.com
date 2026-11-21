@@ -2091,6 +2091,22 @@
   .mr-stats { margin: 6px 0 10px; padding: 10px 10px 4px; background: #fffdf6; border: 1px solid #efdcab; border-radius: 12px; }
   .mr-stats .st-tiles { margin: 0 0 12px; }
   .mr-stats .st-tbl td { padding: 6px 8px; }
+  /* Rename in place: the name turns into a field, ✕ inside it cancels, ✓ saves */
+  .mr-room > summary > .mr-ed, .mr-games li > .mr-ed { flex: 1 1 0; min-width: 0; margin-right: 0; }
+  /* section headings line up with the left edge of the coloured room rows */
+  .rooms-card .mr-h { margin-left: -8px !important; }
+  .mr-inbox { position: relative; flex: 1; min-width: 0; display: flex; }
+  .mr-inbox input { flex: 1; min-width: 0; padding-right: 32px !important; }
+  .mr-inbox .mr-x { position: absolute; right: 3px; top: 50%; transform: translateY(-50%); width: 26px; height: 26px; border: 0; border-radius: 50%; background: none; color: #7d8a82; font-size: .9rem; font-weight: 800; cursor: pointer; padding: 0; }
+  .mr-inbox .mr-x:hover { background: #eef0ee; color: #1d2b24; }
+  /* Stats: icon before the heading; tiles in the page's gold and green */
+  #ft-stats > .pg-h .pg-ic { display: inline-flex; align-items: center; gap: 8px; }
+  #ft-stats > .pg-h .pg-ic svg { width: 20px; height: 20px; color: #b8860b; }
+  .st-t, .st-t.t1, .st-t.t2, .st-t.t3 { background: #fdf0c8; box-shadow: inset 0 0 0 1px #e2bf5c; }
+  .st-t b, .st-t.t2 b { color: #0e5a3a; }
+  .st-t small { color: #8a6a10; }
+  .st-t span { color: #8a6a10; opacity: .85; }
+  .mr-room { scroll-margin-top: 8px; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -2377,7 +2393,7 @@
     </div>
 
     <div class="ft-sec" id="ft-stats" hidden>
-      <h2 class="pg-h">Stats</h2>
+      <h2 class="pg-h"><span class="pg-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>Stats</span></h2>
       <div id="statsBody"><p class="mr-empty">Loading…</p></div>
     </div>
 
@@ -4272,9 +4288,8 @@
       + `<span role="listitem" class="sv-buy"><small>Buy-in</small><b>${st.share ? st.share.toLocaleString() : 'Not set'}</b></span></div>`
       + `<button type="button" class="sb-setup-ed ${rulesEditing ? 'on' : ''}" data-setupedit aria-expanded="${rulesEditing}" title="${gsLbl}" aria-label="${gsLbl}">${I_SLIDERS}</button>`
       + '</div></div>';
-    // Chips: only what isn't visible elsewhere – Ended, and a warning when scores aren't reaching the server
+    // Chips: only what isn't visible elsewhere – a warning when scores aren't reaching the server
     const chips = [];
-    if (isEnded()) chips.push('<span class="ended">Ended</span>');
     if (online) {
       const stt = navigator.onLine === false ? 'offline' : syncState;
       if (stt === 'offline') chips.push('<span class="sync offline">Offline – will sync</span>');
@@ -4674,7 +4689,7 @@
     box.innerHTML = pick + statsCore(games, roomCount);
     renderStats.picker();
   }
-  // Tiles + players table for a set of games (Stats page, and a room's stats in My Rooms when roomCount is 0)
+  // Tiles + players table for a set of games (Stats page, and a room's stats in My Rooms when roomCount is null)
   function statsCore(games, roomCount) {
     const now = Date.now();
     const active = games.filter(x => x.status !== 'ended' && !(((tsMs(x.updatedAt) || x.createdMs || 0) && now - (tsMs(x.updatedAt) || x.createdMs) > INACTIVE_DAYS * DAY))).length;
@@ -4692,7 +4707,7 @@
     });
     const list = Object.values(ppl).sort((a, b) => b.won - a.won || (b.won / b.played) - (a.won / a.played) || b.played - a.played || a.name.localeCompare(b.name));
     const top = list.length && list[0].won ? list[0].won : -1;
-    return `<div class="st-tiles">${roomCount ? `<div class="st-t t1"><b>${roomCount}</b><small>${roomCount === 1 ? 'Room' : 'Rooms'}</small></div>` : ''}<div class="st-t t2"><b>${games.length}</b><small>Games</small><span>${active} active</span></div><div class="st-t t3"><b>${list.length}</b><small>Players</small></div></div>
+    return `<div class="st-tiles">${roomCount != null ? `<div class="st-t t1"><b>${roomCount}</b><small>${roomCount === 1 ? 'Room' : 'Rooms'}</small></div>` : ''}<div class="st-t t2"><b>${games.length}</b><small>Games</small><span>${active} active</span></div><div class="st-t t3"><b>${list.length}</b><small>Players</small></div></div>
       <hr class="st-sep">
       <div class="st-h">Players</div>
       ${list.length ? `<table class="st-tbl"><thead><tr><th>Player</th><th>Played</th><th>Won</th><th>Win %</th></tr></thead><tbody>${list.map(p => {
@@ -4742,11 +4757,11 @@
       const ren = mrEditing('room', id), full = ren || roomFull[id];
       const day = fmtDMY(e.createdMs || e.at || Date.now());
       return `<details class="mr-room" data-rid="${id}" ${roomsExpanded.has(id) ? 'open' : ''}>
-        <summary><span class="mr-tg" aria-hidden="true"></span><button type="button" class="mr-no ${full ? 'on' : ''}" data-mr="roomno" data-id="${id}" title="${own ? 'Full name and rename' : 'Show the full name'}" aria-label="${own ? 'Full name and rename' : 'Show the full name'}" aria-expanded="${!!full}">${i + 1}</button><span class="mr-nm"><span class="mr-name">${esc(e.name || 'Room')}</span><span class="mr-meta">${day}</span></span>
-          <button type="button" class="ico-btn rst ${roomStat[id] ? 'on' : ''}" data-mr="rstats" data-id="${id}" title="Stats for this room" aria-label="Stats for this room" aria-expanded="${!!roomStat[id]}">${MI.stats}</button>
+        <summary><span class="mr-tg" aria-hidden="true"></span><button type="button" class="mr-no ${full ? 'on' : ''}" data-mr="roomno" data-id="${id}" title="${own ? 'Full name and rename' : 'Show the full name'}" aria-label="${own ? 'Full name and rename' : 'Show the full name'}" aria-expanded="${!!full}">${i + 1}</button>${ren ? mrEditor(e.name || 'Room', 40) : `<span class="mr-nm"><span class="mr-name">${esc(e.name || 'Room')}</span><span class="mr-meta">${day}</span></span>`}
+          ${ren ? '' : `<button type="button" class="ico-btn rst ${roomStat[id] ? 'on' : ''}" data-mr="rstats" data-id="${id}" title="Stats for this room" aria-label="Stats for this room" aria-expanded="${!!roomStat[id]}">${MI.stats}</button>
           ${canShare ? `<button type="button" class="ico-btn share ${roomTool[id] ? 'on' : ''}" data-mr="links" data-id="${id}" title="Share the whole room" aria-label="Share the whole room">${I_SHARE}</button>` : ''}
-          <button type="button" class="ico-btn del" data-mr="${own ? 'delroom' : 'forget'}" data-id="${id}" title="${own ? 'Delete room' : 'Remove from this device'}" aria-label="${own ? 'Delete room' : 'Remove from this device'}">${I_TRASH}</button>
-          ${ren ? `<span class="mr-full mr-full-ed">${mrEditor(e.name || 'Room', 40)}<span class="mf-day">${day}</span></span>` : (full ? `<span class="mr-full">${esc(e.name || 'Room')} · ${day}</span>` : '')}</summary>
+          <button type="button" class="ico-btn del" data-mr="${own ? 'delroom' : 'forget'}" data-id="${id}" title="${own ? 'Delete room' : 'Remove from this device'}" aria-label="${own ? 'Delete room' : 'Remove from this device'}">${I_TRASH}</button>`}
+          ${!ren && full ? `<span class="mr-full">${esc(e.name || 'Room')} · ${day}</span>` : ''}</summary>
         <div class="mr-body" id="mrb-${id}"></div></details>`;
     };
     const mine = all.filter(([, e]) => e.role === 'owner'), shared = all.filter(([, e]) => e.role !== 'owner');
@@ -4791,8 +4806,8 @@
   let mrEdit = null;   // { kind: 'room' | 'game', r, g }
   function mrEditing(kind, r, g) { return !!mrEdit && mrEdit.kind === kind && mrEdit.r === r && (kind === 'room' || mrEdit.g === g); }
   function mrEditor(raw, max) {
-    return `<span class="mr-ed"><input type="text" id="mrEdIn" maxlength="${max}" value="${esc(raw)}" aria-label="New name" autocomplete="off" enterkeyhint="done">
-      <button type="button" class="ico-btn ok" data-mr="rensave" title="Save" aria-label="Save">✓</button><button type="button" class="ico-btn" data-mr="rencancel" title="Cancel" aria-label="Cancel">✕</button></span>`;
+    return `<span class="mr-ed"><span class="mr-inbox"><input type="text" id="mrEdIn" maxlength="${max}" value="${esc(raw)}" aria-label="New name" autocomplete="off" enterkeyhint="done"><button type="button" class="mr-x" data-mr="rencancel" title="Cancel" aria-label="Cancel">✕</button></span>
+      <button type="button" class="ico-btn ok" data-mr="rensave" title="Save" aria-label="Save">✓</button></span>`;
   }
   function startRename(kind, r, g) {
     mrEdit = { kind, r, g };
@@ -4841,16 +4856,15 @@
         const last = tsMs(x.updatedAt) || x.createdMs || 0;
         const idle = x.status === 'ended' || (last && Date.now() - last > INACTIVE_DAYS * DAY);
         const open = ren || gameFull[fk];
-        return `<li class="${here ? 'here' : ''}${idle ? ' idle' : ''}"><button type="button" class="mg-sp ${open ? 'on' : ''}" data-mr="gfull" data-id="${id}" data-g="${x.id}" data-ren="${canShare ? 1 : ''}" aria-expanded="${!!open}" title="${canShare ? 'Full name and rename' : 'Show the full name'}" aria-label="${canShare ? 'Full name and rename' : 'Show the full name'}">${gi + 1}</button>${false ? mrEditor(x.gameName || gt, 50) : `<button type="button" class="mg-name" data-mr="opengameof" data-id="${id}" data-g="${x.id}"><span class="mg-nt">${esc(gt)}</span>${/\d{4}/.test(gt) ? '' : `<span class="mg-date">${fmtDMY(x.createdMs || Date.now())}</span>`}</button>`}
-          ${canShare ? `<button type="button" class="ico-btn share ${gameTool[id + '_' + x.id] ? 'on' : ''}" data-mr="glinks" data-id="${id}" data-g="${x.id}" title="Share this game" aria-label="Share this game">${I_SHARE}</button>` : ''}
-          ${own ? `<button type="button" class="ico-btn del" data-mr="delgamein" data-id="${id}" data-g="${x.id}" title="Delete game" aria-label="Delete game">${I_TRASH}</button>` : ''}</li>
-          ${ren ? `<li class="mg-full mg-full-ed">${mrEditor(x.gameName || gt, 50)}<span class="mf-day">${fmtDMY(x.createdMs || Date.now())}</span></li>`
-            : (gameFull[fk] ? `<li class="mg-full">${esc(gt)}${/\d{4}/.test(gt) ? '' : ' · ' + fmtDMY(x.createdMs || Date.now())}</li>` : '')}
+        return `<li class="${here ? 'here' : ''}${idle ? ' idle' : ''}"><button type="button" class="mg-sp ${open ? 'on' : ''}" data-mr="gfull" data-id="${id}" data-g="${x.id}" data-ren="${canShare ? 1 : ''}" aria-expanded="${!!open}" title="${canShare ? 'Full name and rename' : 'Show the full name'}" aria-label="${canShare ? 'Full name and rename' : 'Show the full name'}">${gi + 1}</button>${ren ? mrEditor(x.gameName || gt, 50) : `<button type="button" class="mg-name" data-mr="opengameof" data-id="${id}" data-g="${x.id}"><span class="mg-nt">${esc(gt)}</span>${/\d{4}/.test(gt) ? '' : `<span class="mg-date">${fmtDMY(x.createdMs || Date.now())}</span>`}</button>`}
+          ${!ren && canShare ? `<button type="button" class="ico-btn share ${gameTool[id + '_' + x.id] ? 'on' : ''}" data-mr="glinks" data-id="${id}" data-g="${x.id}" title="Share this game" aria-label="Share this game">${I_SHARE}</button>` : ''}
+          ${!ren && own ? `<button type="button" class="ico-btn del" data-mr="delgamein" data-id="${id}" data-g="${x.id}" title="Delete game" aria-label="Delete game">${I_TRASH}</button>` : ''}</li>
+          ${ren ? '' : (gameFull[fk] ? `<li class="mg-full">${esc(gt)}${/\d{4}/.test(gt) ? '' : ' · ' + fmtDMY(x.createdMs || Date.now())}</li>` : '')}
           ${gameTool[id + '_' + x.id] ? `<li class="mg-links"><div class="mr-tool lk-box" id="mgl-${id}_${x.id}">Loading…</div></li>` : ''}`;
       }).join('')}</ul>` : '<p class="mr-empty">None</p>')
       : '<p class="mr-empty">Loading…</p>';
     const tool = roomTool[id] ? '<div class="mr-tool lk-box" id="mrLinks-' + id + '">Loading…</div>' : '';
-    const stat = roomStat[id] ? `<div class="mr-tool mr-stats">${list ? statsCore(list, 0) : '<p class="mr-empty">Loading…</p>'}</div>` : '';
+    const stat = roomStat[id] ? `<div class="mr-tool mr-stats">${list ? statsCore(list, null) : '<p class="mr-empty">Loading…</p>'}</div>` : '';
     body.innerHTML = stat + tool + '<div class="mr-sub">Games</div>' + rows;
     if (roomTool[id]) fillRoomLinks(id);
     body.querySelectorAll('[id^="mgl-"]').forEach(b => fillGameLinks(b.id.slice(4)));
@@ -4957,6 +4971,10 @@
       roomStat[id] = !roomStat[id];
       if (roomStat[id]) roomsExpanded.add(id);
       renderRooms();
+      if (roomStat[id]) {   // bring the room to the top so its stats get as much of the screen as possible
+        const d = document.querySelector('.mr-room[data-rid="' + id + '"]');
+        if (d) requestAnimationFrame(() => d.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      }
     }
     else if (a === 'roomno') {   // tap a room's number: full name (and rename, for the owner)
       const e2 = myRooms.rooms[id] || {};
