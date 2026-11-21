@@ -2120,6 +2120,8 @@
   .link-note .ln-x:hover { background: rgba(179,38,30,.08); }
   .hero-foot > .link-note:not([hidden]) + #welcomeCard { margin-top: 16px !important; }
   .hero-foot > .link-note:not([hidden]) + #welcomeCard[hidden] + script + .tiles { margin-top: 16px; }
+  /* New players listed with seat circles */
+  .so-new .su-pn { flex: 1; min-width: 0; padding: 6px 10px; border: 1px solid #e2dbc6; border-radius: 10px; background: #fff; font-size: .82rem; overflow-wrap: anywhere; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -3971,11 +3973,18 @@
           return `<li><button type="button" class="so-b ${n ? 'on' : ''}" data-su="taporder" data-i="${i}" aria-pressed="${!!n}" aria-label="Seat ${n || i + 1}: ${esc(p.name)}">${n || ''}</button>
           <input type="text" id="suPE${i}" class="su-pe" data-pi="${i}" maxlength="30" value="${esc(p.name)}" aria-label="Player ${i + 1}" autocomplete="off">
           <button type="button" class="su-rm" data-su="rmprev" data-i="${i}" aria-label="Remove ${esc(p.name)}">${I_X}</button></li>`; }).join('')}</ol>` : ''}` : '';
-    const chips = setup.added.length ? `<div class="su-chips">${setup.added.map((n, i) => `<span class="su-chip">${esc(n)}<button type="button" data-su="rmplayer" data-i="${i}" aria-label="Remove ${esc(n)}">${I_X}</button></span>`).join('')}</div>` : '';
+    // New players: one per row with a seat circle (same as Existing), so the seating order can be set here too
+    const nt = setup.newTaps || [];
+    const newList = !useOld && setup.added.length ? `${setup.added.length > 1 ? `<div class="so-tip"><span>Tap the circles in seating order</span>${nt.length ? '<button type="button" class="so-reset" data-su="orderreset" data-list="new">Reset</button>' : ''}</div>` : ''}
+        <ol class="su-edit so-live so-new">${setup.added.map((n, i) => { const k = nt.indexOf(i) + 1;
+          return `<li><button type="button" class="so-b ${k ? 'on' : ''}" data-su="taporder" data-list="new" data-i="${i}" aria-pressed="${!!k}" aria-label="Seat ${k || i + 1}: ${esc(n)}">${k || ''}</button>
+          <span class="su-pn">${esc(n)}</span>
+          <button type="button" class="su-rm" data-su="rmplayer" data-i="${i}" aria-label="Remove ${esc(n)}">${I_X}</button></li>`; }).join('')}</ol>` : '';
+    const chips = useOld && setup.added.length ? `<div class="su-chips">${setup.added.map((n, i) => `<span class="su-chip">${esc(n)}<button type="button" data-su="rmplayer" data-i="${i}" aria-label="Remove ${esc(n)}">${I_X}</button></span>`).join('')}</div>` : '';
     const addArea = !setup.addOpen && !(setup.added.length && !useOld)
       ? `<button class="add-open su-addopen" type="button" data-su="openadd"><span class="plus" aria-hidden="true">+</span>${useOld ? 'Add player' : 'Add players'}</button>${useOld ? chips : ''}`
       : `<div class="su-add"><input type="text" id="suPlayerName" maxlength="30" placeholder="${useOld ? 'New player name' : 'Player name'}" autocomplete="off" enterkeyhint="done">
-        <button type="button" class="btn-outline" data-su="addplayer">＋ Add</button></div>${chips}`;
+        <button type="button" class="btn-outline" data-su="addplayer">＋ Add</button></div>${useOld ? chips : newList}`;
     const playersStep = `<div class="su-sec su-players"><div class="su-sh">Players</div>${radios}${addArea}</div>`;
     const keepFocus = document.activeElement && document.activeElement.id;
     const caret = keepFocus && document.activeElement.selectionStart;
@@ -4021,7 +4030,11 @@
       const T = setup.orderTaps || [];   // seats already tapped stay; if everyone else is seated, the new player takes the next seat
       if (T.length && T.length === setup.prevPlayers.length - 1) T.push(setup.prevPlayers.length - 1);
     }
-    else setup.added.push(name);
+    else {
+      setup.added.push(name);
+      const T = setup.newTaps || [];   // same rule for new players
+      if (T.length && T.length === setup.added.length - 1) T.push(setup.added.length - 1);
+    }
     f.value = '';
     renderSetup();
     $('suPlayerName').focus();
@@ -4070,7 +4083,9 @@
     const keep = setup.useExisting && setup.prevPlayers.length > 0;
     let players = keep ? setup.prevPlayers.map(p => ({ ...p })) : [];
     let id = nextIdFor(players);
-    setup.added.forEach(n => { players.push({ id: id++, name: n }); });
+    const NT = (setup.newTaps || []).filter(j => j < setup.added.length);
+    const addedInSeats = NT.length ? NT.map(j => setup.added[j]).concat(setup.added.filter((n, j) => !NT.includes(j))) : setup.added;   // seated first, the rest after
+    addedInSeats.forEach(n => { players.push({ id: id++, name: n }); });
     if (players.length < 2) {
       setup.addOpen = true;
       renderSetup();
@@ -4160,9 +4175,10 @@
     else if (a === 'openadd') { setup.addOpen = true; renderSetup(); $('suPlayerName').focus(); }
     else if (a === 'orderstart') { setup.ordering = true; setup.orderTaps = []; setup.addOpen = false; renderSetup(); }
     else if (a === 'taporder') {
-      if (!setup.orderTaps) setup.orderTaps = [];
-      const i = +t.dataset.i, T = setup.orderTaps, k = T.indexOf(i);
-      const L = setup.prevPlayers;
+      const isNew = t.dataset.list === 'new';
+      if (isNew) { if (!setup.newTaps) setup.newTaps = []; } else if (!setup.orderTaps) setup.orderTaps = [];
+      const i = +t.dataset.i, T = isNew ? setup.newTaps : setup.orderTaps, k = T.indexOf(i);
+      const L = isNew ? setup.added : setup.prevPlayers;
       if (k >= 0) T.splice(k, 1);   // tap again to undo
       else {
         T.push(i);
@@ -4171,7 +4187,7 @@
       if (k < 0 && T.length === L.length) toast('Seating order set');   // rows stay where they are; Start uses the seat numbers
       renderSetup();
     }
-    else if (a === 'orderreset') { setup.orderTaps = []; renderSetup(); }
+    else if (a === 'orderreset') { if (t.dataset.list === 'new') setup.newTaps = []; else setup.orderTaps = []; renderSetup(); }
     else if (a === 'orderdone') { applyOrder(); renderSetup(); }
     else if (a === 'mvprev') {
       const i = +t.dataset.i, j = i + (+t.dataset.d), L = setup.prevPlayers;
@@ -4187,7 +4203,12 @@
       setup.orderTaps = (setup.orderTaps || []).filter(j => j !== i).map(j => j > i ? j - 1 : j);
       renderSetup();
     }
-    else if (a === 'rmplayer') { setup.added.splice(+t.dataset.i, 1); renderSetup(); }
+    else if (a === 'rmplayer') {
+      const i = +t.dataset.i;
+      setup.added.splice(i, 1);
+      setup.newTaps = (setup.newTaps || []).filter(j => j !== i).map(j => j > i ? j - 1 : j);
+      renderSetup();
+    }
     else if (a === 'fromopen') { setup.fromOpen = !setup.fromOpen; renderSetup(); }
     else if (a === 'frompick') { pickFrom(t.dataset.key, true); setup.fromOpen = false; renderSetup(); }
     else if (a === 'existing') { setup.newRoom = false; setup.roomId = (setupRooms()[0] || {}).id || null; if (!setup.gameNameEdited) setup.gameName = defaultGameName(setup.roomId); renderSetup(); }
