@@ -2111,6 +2111,15 @@
   .sb-strip { position: relative; overflow: visible; }
   .sb-endtag { position: absolute; top: -9px; right: -6px; background: #b3261e; color: #fff; font: 800 .6rem Lexend, sans-serif; letter-spacing: .08em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; box-shadow: 0 1px 3px rgba(0,0,0,.25); pointer-events: none; line-height: 1.4; }
   .clock.ended .clock-state { display: none; }
+  /* Invalid link note at the top of Home */
+  .hero-foot > .link-note { display: flex; align-items: center; gap: 10px; box-sizing: border-box; width: 100%; max-width: 440px; margin: 24px auto 0; background: #fde8e6; border: 1px solid #f3b8b2; border-left: 4px solid #b3261e; border-radius: 12px; padding: 10px 8px 10px 12px; font: 600 .88rem/1.35 Lexend, sans-serif; color: #8a2b22; text-align: left; }
+  .hero-foot > .link-note[hidden] { display: none; }
+  .link-note .ln-i { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: #b3261e; color: #fff; display: inline-flex; align-items: center; justify-content: center; font: 800 .8rem Lexend, sans-serif; }
+  .link-note .ln-t { flex: 1; min-width: 0; }
+  .link-note .ln-x { flex: 0 0 auto; width: 30px; height: 30px; border: 0; border-radius: 50%; background: none; color: #8a2b22; font-weight: 800; font-size: .95rem; cursor: pointer; padding: 0; }
+  .link-note .ln-x:hover { background: rgba(179,38,30,.08); }
+  .hero-foot > .link-note:not([hidden]) + #welcomeCard { margin-top: 16px !important; }
+  .hero-foot > .link-note:not([hidden]) + #welcomeCard[hidden] + script + .tiles { margin-top: 16px; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -2150,6 +2159,8 @@
         <span class="chip" id="hdrRound">Round 1</span>
         <span class="chip" id="hdrPlayers">0 players</span>
       </div>
+      <!-- A shared link that no longer works: a note at the top of Home until closed -->
+      <div class="link-note" id="linkNote" role="alert" hidden><span class="ln-i" aria-hidden="true">!</span><span class="ln-t" id="linkNoteText"></span><button type="button" class="ln-x" id="linkNoteX" aria-label="Close">✕</button></div>
       <!-- Before the first game: welcome + "Played before?" in one box, above New Game -->
       <section class="card welcome-card" id="welcomeCard" hidden>
         <div class="wc-top">
@@ -4536,6 +4547,7 @@
   }
   function renderScreen() {
     const scr = curScreen(), home = scr === 'home';
+    if (!home && $('linkNote')) $('linkNote').hidden = true;
     const b = document.body.classList;
     b.toggle('scr-home', home);
     b.toggle('scr-setup', scr === 'setup');
@@ -6199,7 +6211,7 @@
     } catch (err) {
       console.error(err);
       renderRoomCard();
-      roomMsg('This link isn\'t valid any more – it may have expired (links last 1 year), been reset, or the game deleted. Ask for a new link.', 'err');
+      linkNote('This link isn\'t valid anymore. Ask for a new one.');
     }
   }
 
@@ -7008,6 +7020,11 @@
   }
 
   /* ---------- Room card ---------- */
+  function linkNote(text) {   // shown on Home; closes with ✕ or when leaving Home
+    $('linkNoteText').textContent = text;
+    $('linkNote').hidden = !text;
+  }
+  $('linkNoteX').addEventListener('click', () => linkNote(''));
   function roomMsg(text, type) {
     const el = $('roomMsg');
     if (el && !$('roomCard').hidden) setMsg('roomMsg', text, type);
