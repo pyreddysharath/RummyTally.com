@@ -2107,6 +2107,10 @@
   .st-t small { color: #8a6a10; }
   .st-t span { color: #8a6a10; opacity: .85; }
   .mr-room { scroll-margin-top: 8px; }
+  /* Ended game: red tag on the game bar's top-right corner; no "Ended" beside the clock */
+  .sb-strip { position: relative; overflow: visible; }
+  .sb-endtag { position: absolute; top: -9px; right: -6px; background: #b3261e; color: #fff; font: 800 .6rem Lexend, sans-serif; letter-spacing: .08em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; box-shadow: 0 1px 3px rgba(0,0,0,.25); pointer-events: none; line-height: 1.4; }
+  .clock.ended .clock-state { display: none; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -4276,6 +4280,7 @@
         + (roomName ? `<span class="seg room"><b>${esc(roomName)}</b>${canRoom ? pen('room', 'room') : ''}</span>` : '')
         + (roomName && gameShort ? '<span class="sep" aria-hidden="true">›</span>' : '')
         + (gameShort ? `<span class="seg game"><b>${esc(gameShort)}</b>${canGame ? pen('game', 'game') : ''}</span>` : '')
+        + (isEnded() ? '<span class="sb-endtag">Ended</span>' : '')   // on the bar's corner – takes no room from the names
         + '</div>';
     }
     html += '</div>';
