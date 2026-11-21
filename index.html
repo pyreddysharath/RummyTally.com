@@ -2122,6 +2122,8 @@
   .hero-foot > .link-note:not([hidden]) + #welcomeCard[hidden] + script + .tiles { margin-top: 16px; }
   /* New players listed with seat circles */
   .so-new .su-pn { flex: 1; min-width: 0; padding: 6px 10px; border: 1px solid #e2dbc6; border-radius: 10px; background: #fff; font-size: .82rem; overflow-wrap: anywhere; }
+  /* New tab: room between the Add row and the list below it */
+  .su-add + .so-tip, .su-add + .so-new { margin-top: 12px; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -3885,6 +3887,10 @@
       from: currentFromKey(), fromPicked: false,
       added: [], busy: false
     };
+    if (restoring) {   // a refresh: pick up the players and seats from before
+      try { const d = JSON.parse(sessionStorage.getItem(SETUP_DRAFT) || 'null'); if (d) DRAFT_KEYS.forEach(k => { if (d[k] !== undefined) setup[k] = d[k]; }); } catch (e) { /* ignore */ }
+      if (setup.prevPlayers.length) setup.prevAvail = true;
+    } else { try { sessionStorage.removeItem(SETUP_DRAFT); } catch (e) { /* ignore */ } }
     loadFromChoices();
     // Game Settings moves into this section while setting up
     const sb = $('settingsBox');
@@ -3909,7 +3915,13 @@
     }
     if (setup) e.preventDefault();   // New Game: Game Setup stays open
   });
+  // The players and seat numbers being set up survive a refresh of this tab
+  const SETUP_DRAFT = 'rummy-setup-draft', DRAFT_KEYS = ['prevPlayers', 'orderTaps', 'added', 'newTaps', 'useExisting', 'from', 'fromPicked'];
+  function saveSetupDraft() {
+    try { if (setup) sessionStorage.setItem(SETUP_DRAFT, JSON.stringify(Object.fromEntries(DRAFT_KEYS.map(k => [k, setup[k]])))); } catch (e) { /* ignore */ }
+  }
   function closeSetup() {
+    try { sessionStorage.removeItem(SETUP_DRAFT); } catch (e) { /* ignore */ }
     setup = null;
     const sb = $('settingsBox');
     if (settingsHome.parentNode) settingsHome.parentNode.insertBefore(sb, settingsHome);
@@ -3928,6 +3940,7 @@
   }
   // full = rebuild the whole section (open / close); otherwise only the changing parts
   function renderSetup(full) {
+    saveSetupDraft();
     const card = $('setupCard');
     document.body.classList.toggle('setup-open', !!setup);
     $('btnNewGame').classList.toggle('on', !!setup);
