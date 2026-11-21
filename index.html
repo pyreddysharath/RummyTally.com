@@ -4016,7 +4016,11 @@
     const taken = setup.added.concat(setup.useExisting ? setup.prevPlayers.map(p => p.name) : []).map(n => n.toLowerCase());
     if (taken.includes(name.toLowerCase())) { playersErr(`"${name}" is already in the list.`); f.select(); return; }
     setMsg('suMsg', '', ''); if ($('suPMsg')) setMsg('suPMsg', '', '');
-    if (setup.useExisting && setup.prevAvail) { setup.prevPlayers.push({ id: nextIdFor(setup.prevPlayers), name }); setup.orderTaps = []; }
+    if (setup.useExisting && setup.prevAvail) {
+      setup.prevPlayers.push({ id: nextIdFor(setup.prevPlayers), name });
+      const T = setup.orderTaps || [];   // seats already tapped stay; if everyone else is seated, the new player takes the next seat
+      if (T.length && T.length === setup.prevPlayers.length - 1) T.push(setup.prevPlayers.length - 1);
+    }
     else setup.added.push(name);
     f.value = '';
     renderSetup();
@@ -4164,11 +4168,7 @@
         T.push(i);
         if (T.length === L.length - 1) T.push(L.findIndex((p, j) => !T.includes(j)));   // one player left: they take the last seat
       }
-      if (k < 0 && T.length === L.length) {   // all seated: put the list in that order and keep showing the seat numbers
-        applyOrder();
-        setup.orderTaps = setup.prevPlayers.map((p, j) => j);
-        toast('Seating order set');
-      }
+      if (k < 0 && T.length === L.length) toast('Seating order set');   // rows stay where they are; Start uses the seat numbers
       renderSetup();
     }
     else if (a === 'orderreset') { setup.orderTaps = []; renderSetup(); }
@@ -4181,7 +4181,12 @@
       const b = document.querySelector(`[data-su="mvprev"][data-i="${j}"][data-d="${t.dataset.d}"]`);
       if (b && !b.disabled) b.focus();   // keep moving the same player with repeated taps
     }
-    else if (a === 'rmprev') { setup.prevPlayers.splice(+t.dataset.i, 1); setup.orderTaps = []; renderSetup(); }
+    else if (a === 'rmprev') {   // drop a player; the others keep their seat numbers (closed up)
+      const i = +t.dataset.i;
+      setup.prevPlayers.splice(i, 1);
+      setup.orderTaps = (setup.orderTaps || []).filter(j => j !== i).map(j => j > i ? j - 1 : j);
+      renderSetup();
+    }
     else if (a === 'rmplayer') { setup.added.splice(+t.dataset.i, 1); renderSetup(); }
     else if (a === 'fromopen') { setup.fromOpen = !setup.fromOpen; renderSetup(); }
     else if (a === 'frompick') { pickFrom(t.dataset.key, true); setup.fromOpen = false; renderSetup(); }
