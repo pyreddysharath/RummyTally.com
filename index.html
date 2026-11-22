@@ -2124,6 +2124,9 @@
   /* New tab: room between the Add row and the list below it */
   .su-add + .so-tip, .su-add + .so-new { margin-top: 12px; }
   body.link-wait .wrap > :not(.hero) { display: none !important; }   /* a shared link is loading: nothing under the small title yet */
+  @keyframes linkIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  body.link-in .wrap > :not(.hero) { animation: linkIn .3s ease-out both; }
+  @media (prefers-reduced-motion: reduce) { body.link-in .wrap > :not(.hero) { animation: none; } }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -7341,6 +7344,7 @@
       atHome = false; leaveHome(); document.body.classList.add('link-wait');
       const ok = await joinFromLink(L);
       document.body.classList.remove('link-wait');
+      document.body.classList.add('link-in'); setTimeout(() => document.body.classList.remove('link-in'), 400);   // the scoreboard or the message eases in
       renderScreen();
       if (ok !== false) return;
       // a bad link: just the message stays; the game that was open loads quietly behind it for Continue on Home
