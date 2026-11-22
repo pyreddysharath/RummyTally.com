@@ -2112,14 +2112,12 @@
   .sb-endtag { position: absolute; top: -9px; right: -6px; background: #b3261e; color: #fff; font: 800 .6rem Lexend, sans-serif; letter-spacing: .08em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; box-shadow: 0 1px 3px rgba(0,0,0,.25); pointer-events: none; line-height: 1.4; }
   .clock.ended .clock-state { display: none; }
   /* Invalid link note at the top of Home */
-  .hero-foot > .link-note { display: flex; align-items: center; gap: 10px; box-sizing: border-box; width: 100%; max-width: 440px; margin: 24px auto 0; background: #fde8e6; border: 1px solid #f3b8b2; border-left: 4px solid #b3261e; border-radius: 12px; padding: 10px 8px 10px 12px; font: 600 .88rem/1.35 Lexend, sans-serif; color: #8a2b22; text-align: left; }
+  .hero-foot > .link-note { width: 100%; max-width: 440px; margin: 40px auto 0; text-align: center; color: #fff; }
   .hero-foot > .link-note[hidden] { display: none; }
-  .link-note .ln-i { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: #b3261e; color: #fff; display: inline-flex; align-items: center; justify-content: center; font: 800 .8rem Lexend, sans-serif; }
-  .link-note .ln-t { flex: 1; min-width: 0; }
-  .link-note .ln-x { flex: 0 0 auto; width: 30px; height: 30px; border: 0; border-radius: 50%; background: none; color: #8a2b22; font-weight: 800; font-size: .95rem; cursor: pointer; padding: 0; }
-  .link-note .ln-x:hover { background: rgba(179,38,30,.08); }
-  .hero-foot > .link-note:not([hidden]) + #welcomeCard { margin-top: 16px !important; }
-  .hero-foot > .link-note:not([hidden]) + #welcomeCard[hidden] + script + .tiles { margin-top: 16px; }
+  .link-note .ln-i { display: block; width: 40px; height: 40px; margin: 0 auto; color: #f3cb5a; }
+  .link-note .ln-t { display: block; margin-top: 8px; font: 800 1.12rem Lexend, sans-serif; }
+  body.link-bad .hero-foot > :not(.link-note) { display: none !important; }   /* the message alone */
+  body.link-bad .wordmark { cursor: pointer; }   /* the title takes you Home */
   /* New players listed with seat circles */
   .so-new .su-pn { flex: 1; min-width: 0; padding: 6px 10px; border: 1px solid #e2dbc6; border-radius: 10px; background: #fff; font-size: .82rem; overflow-wrap: anywhere; }
   /* New tab: room between the Add row and the list below it */
@@ -2164,7 +2162,7 @@
         <span class="chip" id="hdrPlayers">0 players</span>
       </div>
       <!-- A shared link that no longer works: a note at the top of Home until closed -->
-      <div class="link-note" id="linkNote" role="alert" hidden><span class="ln-i" aria-hidden="true">!</span><span class="ln-t" id="linkNoteText"></span><button type="button" class="ln-x" id="linkNoteX" aria-label="Close">✕</button></div>
+      <div class="link-note" id="linkNote" role="alert" hidden><svg class="ln-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 14.5l-1.8 1.8a3 3 0 0 1-4.2-4.2l3-3a3 3 0 0 1 4.2 0M14.5 9.5l1.8-1.8a3 3 0 0 1 4.2 4.2l-3 3a3 3 0 0 1-4.2 0M4 4l16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ln-t" id="linkNoteText"></span></div>
       <!-- Before the first game: welcome + "Played before?" in one box, above New Game -->
       <section class="card welcome-card" id="welcomeCard" hidden>
         <div class="wc-top">
@@ -4586,7 +4584,7 @@
   }
   function renderScreen() {
     const scr = curScreen(), home = scr === 'home';
-    if (!home && $('linkNote')) $('linkNote').hidden = true;
+    if (!home && $('linkNote') && !$('linkNote').hidden) linkNote('');
     const b = document.body.classList;
     b.toggle('scr-home', home);
     b.toggle('scr-setup', scr === 'setup');
@@ -7068,11 +7066,12 @@
   }
 
   /* ---------- Room card ---------- */
-  function linkNote(text) {   // shown on Home; closes with ✕ or when leaving Home
+  function linkNote(text) {   // a link that doesn't work: just the message; tapping the title (or leaving) shows Home
     $('linkNoteText').textContent = text;
     $('linkNote').hidden = !text;
+    document.body.classList.toggle('link-bad', !!text);
   }
-  $('linkNoteX').addEventListener('click', () => linkNote(''));
+  document.querySelector('.wordmark').addEventListener('click', () => { if (document.body.classList.contains('link-bad')) linkNote(''); });
   function roomMsg(text, type) {
     const el = $('roomMsg');
     if (el && !$('roomCard').hidden) setMsg('roomMsg', text, type);
