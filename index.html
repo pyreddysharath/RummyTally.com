@@ -2138,6 +2138,7 @@
   .cp-bub.below::after { top: 0; transform: rotate(225deg); }
   .cp-bub.out { opacity: 0; }
   @keyframes cpIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  .lk-until .nw { white-space: nowrap; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -4408,8 +4409,7 @@
       const g = o.gameId;
       html = await gameLinksHtml(o.roomId, g);
       if (online !== o || o.gameId !== g) return;
-      const nm = (document.querySelector('.sb-strip .seg.game b') || {}).textContent || 'This game';
-      if (html) html = `<p class="lk-head">${esc(nm)}</p>` + html;
+
     } catch (e) { html = '<p class="lk-note">The links need an internet connection the first time – try again once you\'re online.</p>'; }
     box.innerHTML = img + html;
   }
@@ -4894,9 +4894,7 @@
     try {
       await cloudInit();
       const html = await gameLinksHtml(r, g);
-      const x = (gamesOf(r) || []).find(y => y.id === g), en = myRooms.games[id] || {};
-      const nm = x ? shortGameName(gameTitle(x.createdMs, x.seq, x.gameName)) : (en.name || 'This game');
-      const out = html ? `<p class="lk-head">${esc(nm)}</p>` + html : '<p class="mr-empty">None</p>';
+      const out = html || '<p class="mr-empty">None</p>';   // the box sits right under its game, so no name heading
       if ($('mgl-' + id) === box && box.__h !== out) { box.innerHTML = out; box.__h = out; }   // unchanged: leave it, so it doesn't flash
     } catch (err) { box.innerHTML = '<p class="mr-empty">Offline</p>'; box.__h = ''; }
   }
@@ -4991,11 +4989,11 @@
     try {
       await cloudInit();
       const k = await roomKeysFor(r);
-      let html = '<p class="lk-head">Whole room <small>– every game, including new ones</small></p>';
+      let html = '';   // the box sits right under its room, so no name heading
       const own = e.role === 'owner', at = role => `data-scope="room" data-id="${r}" data-role="${role}"`;
       html += linkSlotHtml('View', k.view ? roomLink(r, 'view', k.view) : '', 'view', own, at('view'));
       if (e.role !== 'view') html += linkSlotHtml('Edit', k.edit ? roomLink(r, 'edit', k.edit) : '', 'edit', own, at('edit'));
-      if (k.view || k.edit) html += linkUntilHtml(k.until);
+      if (k.view || k.edit) html += linkUntilHtml(k.until, true);
       if ($('mrLinks-' + r) === box && box.__h !== html) { box.innerHTML = html; box.__h = html; }   // unchanged: leave it, so it doesn't flash
     } catch (err) { box.innerHTML = '<p class="mr-empty">Offline</p>'; box.__h = ''; }
   }
@@ -6724,7 +6722,7 @@
     if (roomName) fb.updateDoc(R.game(r, g), { roomName }).catch(() => {});
     return k;
   }
-  function linkUntilHtml(ms) { return ms ? `<p class="lk-until">Links work until ${fmtDMY(ms)}</p>` : ''; }
+  function linkUntilHtml(ms, room) { return ms ? `<p class="lk-until">Links work ${room ? 'for future games too, ' : ''}<span class="nw">until ${fmtDMY(ms)}</span></p>` : ''; }   // room links also open games made later
   async function gameLinksHtml(r, g) {
     const k = await gameKeysFor(r, g);
     if (!k) return '';
