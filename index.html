@@ -4352,8 +4352,7 @@
         gameFull = online.gameMeta ? gameTitle(online.gameMeta.createdMs, online.gameMeta.seq, state.gameName) : '';
       }
     } else gameFull = state.gameName || '';
-    const m = /^\d{2}-[A-Za-z]{3}-\d{4} · (.+)$/.exec(gameFull);
-    gameShort = m ? m[1] : gameFull;
+    gameShort = shortGameName(gameFull);
     html += '<div class="sb-hgrid"><div class="sb-row1">';   // two lined-up rows: name pill + share, then Limit/Buy-in + Game Setup
     if (sbEdit === 'room') html += editor('Room', roomName, 40);
     else if (sbEdit === 'game') html += editor('Game', gameFull, 50);
@@ -4409,7 +4408,8 @@
       const g = o.gameId;
       html = await gameLinksHtml(o.roomId, g);
       if (online !== o || o.gameId !== g) return;
-      if (html) html = '<p class="lk-head">This game only</p>' + html;
+      const nm = (document.querySelector('.sb-strip .seg.game b') || {}).textContent || 'This game';
+      if (html) html = `<p class="lk-head">${esc(nm)}</p>` + html;
     } catch (e) { html = '<p class="lk-note">The links need an internet connection the first time – try again once you\'re online.</p>'; }
     box.innerHTML = img + html;
   }
@@ -4839,7 +4839,7 @@
     $('btnMyRooms').classList.toggle('on', roomsOpen);
     $('btnMyRooms').setAttribute('aria-expanded', String(roomsOpen));
     parkRoomCard();
-    if (!roomsOpen) { card.hidden = true; card.innerHTML = ''; return; }
+    if (!roomsOpen) { card.hidden = true; card.innerHTML = ''; card.__h = ''; return; }
     card.hidden = false;
     const keep = $('mrMsg') ? { t: $('mrMsg').textContent, c: $('mrMsg').className } : null;
     const newest = (a, b) => (b[1].createdMs || b[1].at || 0) - (a[1].createdMs || a[1].at || 0);   // latest first
@@ -4875,11 +4875,14 @@
         <summary><span class="mr-tg" aria-hidden="true"></span><span class="mr-nm"><span class="mr-name">${esc(name)}</span><span class="mr-meta">${list.length} game${list.length === 1 ? '' : 's'}</span></span></summary>
         <div class="mr-body"><div class="mr-sub">Games</div><ul class="mr-games">${rows}</ul></div></details>`;
     }).join('');
-    card.innerHTML = `
+    const out = `
       <h2 class="pg-h">My Rooms</h2><div class="mr-h">Created by me</div>${mine.length ? '<div class="mr-list">' + mine.map(sec).join('') + '</div>' : '<p class="mr-empty">None</p>'}
       <div class="mr-h mr-h2">Shared with me</div>${shared.length || one ? '<div class="mr-list">' + shared.map(sec).join('') + one + '</div>' : '<p class="mr-empty">None</p>'}
       <div class="msg" id="mrMsg"></div>`;
-    if (keep && keep.t) { $('mrMsg').textContent = keep.t; $('mrMsg').className = keep.c; }
+    if (card.__h !== out || !card.firstChild) {   // same list as on screen: keep it, so open link boxes don't blank and reload
+      card.innerHTML = out; card.__h = out;
+      if (keep && keep.t) { $('mrMsg').textContent = keep.t; $('mrMsg').className = keep.c; }
+    }
     roomsExpanded.forEach(id => { if (!id.startsWith('g:')) fillRoomSection(id); });
     Object.keys(gameTool).forEach(id => { if (gameTool[id] && $('mgl-' + id)) fillGameLinks(id); });
   }
@@ -4891,8 +4894,11 @@
     try {
       await cloudInit();
       const html = await gameLinksHtml(r, g);
-      if ($('mgl-' + id) === box) box.innerHTML = html ? '<p class="lk-head">This game only</p>' + html : '<p class="mr-empty">None</p>';
-    } catch (err) { box.innerHTML = '<p class="mr-empty">Offline</p>'; }
+      const x = (gamesOf(r) || []).find(y => y.id === g), en = myRooms.games[id] || {};
+      const nm = x ? shortGameName(gameTitle(x.createdMs, x.seq, x.gameName)) : (en.name || 'This game');
+      const out = html ? `<p class="lk-head">${esc(nm)}</p>` + html : '<p class="mr-empty">None</p>';
+      if ($('mgl-' + id) === box && box.__h !== out) { box.innerHTML = out; box.__h = out; }   // unchanged: leave it, so it doesn't flash
+    } catch (err) { box.innerHTML = '<p class="mr-empty">Offline</p>'; box.__h = ''; }
   }
 
   // My Rooms: rename a room (owner) or a game (owner or edit access)
@@ -4958,7 +4964,8 @@
       : '<p class="mr-empty">Loading…</p>';
     const tool = roomTool[id] ? '<div class="mr-tool lk-box" id="mrLinks-' + id + '">Loading…</div>' : '';
     const stat = roomStat[id] ? `<div class="mr-tool mr-stats">${list ? statsCore(list, null) : '<p class="mr-empty">Loading…</p>'}</div>` : '';
-    body.innerHTML = stat + tool + '<div class="mr-sub">Games</div>' + rows;
+    const out = stat + tool + '<div class="mr-sub">Games</div>' + rows;
+    if (body.__h !== out) { body.innerHTML = out; body.__h = out; }   // same as on screen: keep it (open link boxes stay filled, no "Loading…" flash)
     if (roomTool[id]) fillRoomLinks(id);
     body.querySelectorAll('[id^="mgl-"]').forEach(b => fillGameLinks(b.id.slice(4)));
     if (list && (isOpenRoom(id) || otherRoomDocs[id])) return;
@@ -4989,8 +4996,8 @@
       html += linkSlotHtml('View', k.view ? roomLink(r, 'view', k.view) : '', 'view', own, at('view'));
       if (e.role !== 'view') html += linkSlotHtml('Edit', k.edit ? roomLink(r, 'edit', k.edit) : '', 'edit', own, at('edit'));
       if (k.view || k.edit) html += linkUntilHtml(k.until);
-      box.innerHTML = html;
-    } catch (err) { box.innerHTML = '<p class="mr-empty">Offline</p>'; }
+      if ($('mrLinks-' + r) === box && box.__h !== html) { box.innerHTML = html; box.__h = html; }   // unchanged: leave it, so it doesn't flash
+    } catch (err) { box.innerHTML = '<p class="mr-empty">Offline</p>'; box.__h = ''; }
   }
 
   async function resetLinksFor(r) {
@@ -6215,6 +6222,7 @@
     GAME_FIELDS.forEach(f => { g[f] = clone(src[f]); });
     return g;
   }
+  function shortGameName(full) { const m = /^\d{2}-[A-Za-z]{3}-\d{4} · (.+)$/.exec(full || ''); return m ? m[1] : (full || ''); }   // "16-Nov-2026 · Game 2" → "Game 2"
   function gameTitle(createdMs, seq, name) { return (typeof name === 'string' && name) || `${fmtDay(createdMs || Date.now())} · Game ${seq || 1}`; }
 
   function freshGameFrom(src) {
