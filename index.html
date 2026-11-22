@@ -2127,6 +2127,10 @@
   @keyframes linkIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
   body.link-in .wrap > :not(.hero) { animation: linkIn .15s ease-out both; }
   @media (prefers-reduced-motion: reduce) { body.link-in .wrap > :not(.hero) { animation: none; } }
+  /* Taps: no browser (blue) flash anywhere; share / copy buttons press in the page's own pale gold */
+  * { -webkit-tap-highlight-color: transparent; }
+  .ico-btn:active, [data-lk]:active { background: #f6e7b8 !important; }
+  .ico-btn:focus:not(:focus-visible), [data-lk]:focus:not(:focus-visible) { outline: none; box-shadow: none; }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -7293,6 +7297,7 @@
     } else {
       try { await navigator.clipboard.writeText(url); toast('Link copied – paste it anywhere'); } catch (e) { prompt('Copy this link:', url); }
     }
+    try { btn.blur(); } catch (e) { /* ignore */ }   // no focus highlight left on the button afterwards
     if (kind === 'owner') renderRoomCard();
   }
 
