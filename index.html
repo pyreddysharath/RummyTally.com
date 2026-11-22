@@ -6,6 +6,8 @@
 <meta name="theme-color" content="#0b4a30">
 <meta name="description" content="RummyTally – a free Rummy score keeper for friends. Add players, enter points each round, see who is out, share live rooms and split the pot.">
 <title>RummyTally – Rummy Scoreboard</title>
+<script>/* opening a shared link: start fetching the online parts right away, so the room opens (or the link is checked) sooner */
+  try { if (new URLSearchParams(location.search).get('r')) ['firebase-app.js', 'firebase-auth.js', 'firebase-firestore.js'].forEach(f => { const l = document.createElement('link'); l.rel = 'modulepreload'; l.href = 'https://www.gstatic.com/firebasejs/11.10.0/' + f; document.head.appendChild(l); }); } catch (e) { /* ignore */ }</script>
 <meta property="og:title" content="RummyTally">
 <meta property="og:description" content="Live Rummy scoreboard on every phone.">
 <link rel="icon" href="assets/icons/favicon.svg?v=3" type="image/svg+xml">
@@ -4590,6 +4592,7 @@
   function renderScreen() {
     const scr = curScreen(), home = scr === 'home';
     if (scr !== 'game' && $('linkNote') && !$('linkNote').hidden) linkNote('');
+    if (home && /[?&]r=/.test(location.search) && !document.body.classList.contains('link-wait')) history.replaceState(null, '', location.pathname);   // Home never keeps a link in the address bar
     const b = document.body.classList;
     b.toggle('scr-home', home);
     b.toggle('scr-setup', scr === 'setup');
@@ -4625,7 +4628,7 @@
       // Remember the full label so it shows straight away after a refresh
       if (online && online.gameMeta && myRooms.current && myRooms.current.label !== lbl) { myRooms.current.label = lbl; saveRooms(); }
     }
-    try { sessionStorage.setItem(SCREEN_KEY, document.body.classList.contains('link-bad') ? 'home' : scr); } catch (e) { /* ignore */ }   // a refresh on the bad-link message opens Home
+    try { sessionStorage.setItem(SCREEN_KEY, document.body.classList.contains('link-bad') ? 'home' : scr); } catch (e) { /* ignore */ }   // (the bad-link message keeps its link in the address bar, so a refresh shows it again)
     if (home) fitWordmark();
   }
   function resumeLabel() {
@@ -4673,6 +4676,8 @@
   const openRoomsPage = () => openPage('rooms');
   const closeRoomsPage = () => { hidePage(); renderPage(); renderRooms(); };
   window.addEventListener('popstate', () => {
+    const bc = document.body.classList;
+    if (/[?&]r=/.test(location.search) && !bc.contains('link-wait') && !bc.contains('link-bad')) history.replaceState(null, '', location.pathname);   // back to the entry a link opened: don't keep its key in the address bar
     if (infoOver && page) { closeInfoPage(); return; }   // back from an info page: to what was underneath
     navHistory = false; if (curScreen() !== 'home') goHome(true);
   });
@@ -6076,7 +6081,7 @@
      rules can check the key behind each link. The game on screen is kept in
      sync both ways: local changes are pushed, remote changes are drawn live.
      ===================================================================== */
-  const FB_VERSION = '11.10.0';
+  const FB_VERSION = '11.10.0';   // also in the link preload near the top of the page
   const FB_CFG = (window.RUMMY_FIREBASE_CONFIG && window.RUMMY_FIREBASE_CONFIG.apiKey) ? window.RUMMY_FIREBASE_CONFIG : null;
   const GAME_FIELDS = ['settings', 'players', 'rounds', 'draft', 'declared', 'manualOut', 'manualOutAt', 'rejoinAt', 'rejoins', 'dealerId', 'timer', 'nextId', 'gameName'];
   const ROOMS_KEY = 'rummy-rooms-v1';
@@ -6225,6 +6230,7 @@
 
   /* ---------- Entering and leaving a room ---------- */
   async function joinFromLink(L) {
+    const asOpened = location.pathname + location.search;
     history.replaceState(null, '', location.pathname);   // keep the secret key out of the address bar
     const hadRoom = !!myRooms.rooms[L.r], hadGame = !!myRooms.games[L.r + '_' + L.g], prevCurrent = myRooms.current;
     try {
@@ -6260,6 +6266,7 @@
       myRooms.current = prevCurrent;   // the game that was open before still opens from Home
       saveRooms();
       renderRoomCard();
+      history.replaceState(null, '', asOpened);   // it didn't work: keep the link in the address bar, so a refresh shows this again
       linkNote('This link isn\'t valid anymore');   // on the same small-title screen; the title takes you Home
       return false;
     }
@@ -7074,6 +7081,7 @@
     $('linkNoteText').textContent = text;
     $('linkNote').hidden = !text;
     document.body.classList.toggle('link-bad', !!text);
+    if (!text && location.search) history.replaceState(null, '', location.pathname);   // moved on: the bad link leaves the address bar
   }
 
   function roomMsg(text, type) {
