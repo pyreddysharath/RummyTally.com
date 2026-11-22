@@ -2112,25 +2112,35 @@
   .sb-endtag { position: absolute; top: -9px; right: -6px; background: #b3261e; color: #fff; font: 800 .6rem Lexend, sans-serif; letter-spacing: .08em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; box-shadow: 0 1px 3px rgba(0,0,0,.25); pointer-events: none; line-height: 1.4; }
   .clock.ended .clock-state { display: none; }
   /* Invalid link note at the top of Home */
-  .hero-foot > .link-note { width: 100%; max-width: 440px; margin: 40px auto 0; text-align: center; color: #fff; }
-  .hero-foot > .link-note[hidden] { display: none; }
+  .wrap > .link-note { width: 100%; max-width: 440px; margin: 56px auto; text-align: center; color: #fff; }
+  .wrap > .link-note[hidden] { display: none; }
   .link-note .ln-i { display: block; width: 40px; height: 40px; margin: 0 auto; color: #f3cb5a; }
   .link-note .ln-t { display: block; margin-top: 8px; font: 800 1.12rem Lexend, sans-serif; }
-  body.link-bad .hero-foot > :not(.link-note) { display: none !important; }   /* the message alone */
-  body.link-bad .wordmark { cursor: pointer; }   /* the title takes you Home */
+  body.link-bad .wrap > :not(.hero):not(.link-note) { display: none !important; }   /* the message alone */
   /* New players listed with seat circles */
   .so-new .su-pn { flex: 1; min-width: 0; padding: 6px 10px; border: 1px solid #e2dbc6; border-radius: 10px; background: #fff; font-size: .82rem; overflow-wrap: anywhere; }
   /* New tab: room between the Add row and the list below it */
   .su-add + .so-tip, .su-add + .so-new { margin-top: 12px; }
-  body.link-wait .hero-foot > * { display: none !important; }   /* a shared link is loading */
+  body.link-wait .wrap > :not(.hero) { display: none !important; }   /* a shared link is loading: nothing under the small title yet */
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
 </head>
 <body>
+<script>
+  /* Background suit pattern – set before anything paints, so it's there from the first frame */
+  (function setSuitPattern() {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140">
+      <g font-family="Arial" font-size="26" fill="#ffffff" fill-opacity="0.05">
+        <text x="12" y="38">♠</text><text x="82" y="38">♥</text>
+        <text x="47" y="103">♦</text><text x="117" y="103">♣</text>
+      </g></svg>`;
+    document.documentElement.style.setProperty('--suits', `url("data:image/svg+xml,${encodeURIComponent(svg)}")`);
+  })();
+</script>
 <script>/* before anything paints: a refresh on Home or a page starts there, so the scoreboard doesn't flash */
   try { const sc = sessionStorage.getItem('rummy-screen') || ''; const b = document.body.classList;
-    if (new URLSearchParams(location.search).get('r')) b.add('scr-home', 'link-wait');   // opening a shared link: big title only until it loads
+    if (new URLSearchParams(location.search).get('r')) b.add('scr-game', 'nav-mode', 'link-wait');   // opening a shared link: the scoreboard layout (small title) while it loads
     else {
       if (sc === '' || sc === 'home') b.add('scr-home');
       else if (sc !== 'setup' && sc !== 'game') b.add('page-mode', 'nav-mode');   // My Rooms, Stats and the menu pages
@@ -2148,8 +2158,9 @@
         <button class="nv nv-game" id="btnNewGame" type="button" aria-controls="setupCard"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="11" height="15" rx="2" transform="rotate(-10 8.5 12.5)" fill="none" stroke="currentColor" stroke-width="2"/><rect x="10" y="4" width="11" height="15" rx="2" transform="rotate(8 15.5 11.5)" fill="currentColor" opacity=".9"/></svg>New Game</button>
         <button class="nv nv-rooms" id="btnRoomsNav" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11 12 4l8.5 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 9.5V20h4.5v-5.5h3V20H18V9.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>My Rooms</button>
       </div>
-      <button class="tb-btn tb-menu" id="btnMenu" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="appMenu"></button>
+      <button class="tb-btn tb-menu" id="btnMenu" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="appMenu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
       <script>/* signed in before: show your photo on the menu button straight away, before the rest of the page loads */
+        try { if (document.body.classList.contains('nav-mode')) { document.getElementById('tbBrand').hidden = false; document.getElementById('btnBack').hidden = false; } } catch (e) { /* ignore */ }   // small title straight away (shared link, pages)
         try { const m = JSON.parse(localStorage.getItem('rummy-menu-ava') || 'null'); if (m && m.html) { const b = document.getElementById('btnMenu'); b.innerHTML = m.html; b.dataset.mb = m.html; b.title = m.title || 'Menu'; } } catch (e) { /* ignore */ }</script>
       <button id="btnMyRooms" type="button" hidden aria-hidden="true" tabindex="-1"></button>
     </div>
@@ -2163,8 +2174,6 @@
         <span class="chip" id="hdrRound">Round 1</span>
         <span class="chip" id="hdrPlayers">0 players</span>
       </div>
-      <!-- A shared link that no longer works: a note at the top of Home until closed -->
-      <div class="link-note" id="linkNote" role="alert" hidden><svg class="ln-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 14.5l-1.8 1.8a3 3 0 0 1-4.2-4.2l3-3a3 3 0 0 1 4.2 0M14.5 9.5l1.8-1.8a3 3 0 0 1 4.2 4.2l-3 3a3 3 0 0 1-4.2 0M4 4l16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ln-t" id="linkNoteText"></span></div>
       <!-- Before the first game: welcome + "Played before?" in one box, above New Game -->
       <section class="card welcome-card" id="welcomeCard" hidden>
         <div class="wc-top">
@@ -2196,6 +2205,8 @@
       <button class="resume" id="btnResume" type="button" hidden><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 4.5v15l12-7.5z" fill="currentColor"/></svg><span id="resumeText">Continue game</span></button>
     </div>
   </header>
+  <!-- A shared link that no longer works: just this message under the small title -->
+  <div class="link-note" id="linkNote" role="alert" hidden><svg class="ln-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 14.5l-1.8 1.8a3 3 0 0 1-4.2-4.2l3-3a3 3 0 0 1 4.2 0M14.5 9.5l1.8-1.8a3 3 0 0 1 4.2 4.2l-3 3a3 3 0 0 1-4.2 0M4 4l16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ln-t" id="linkNoteText"></span></div>
 
   <!-- New Game (with its room): filled in by the script when the top button is tapped -->
   <section class="card setup-card" id="setupCard" hidden></section>
@@ -2492,15 +2503,6 @@
   const I_DOWN = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const I_X = '<svg class="x-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>';   // the one close symbol
 
-  /* ---------- Background suit pattern ---------- */
-  (function setSuitPattern() {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140">
-      <g font-family="Arial" font-size="26" fill="#ffffff" fill-opacity="0.05">
-        <text x="12" y="38">♠</text><text x="82" y="38">♥</text>
-        <text x="47" y="103">♦</text><text x="117" y="103">♣</text>
-      </g></svg>`;
-    document.documentElement.style.setProperty('--suits', `url("data:image/svg+xml,${encodeURIComponent(svg)}")`);
-  })();
 
   /* ---------- Storage ---------- */
   const STORAGE_KEY = 'rummy-scoreboard-v1';
@@ -4516,7 +4518,8 @@
   function curScreen() {
     if (page) return page;
     if (setup) return 'setup';
-    return atHome || !hasOpenGame() ? 'home' : 'game';
+    const linkScr = document.body.classList.contains('link-wait') || document.body.classList.contains('link-bad');   // opening a shared link: stay on the scoreboard layout
+    return atHome || (!hasOpenGame() && !linkScr) ? 'home' : 'game';
   }
   // Leaving Home adds one step to the browser history, so the phone's Back comes home
   function leaveHome() {
@@ -4586,7 +4589,7 @@
   }
   function renderScreen() {
     const scr = curScreen(), home = scr === 'home';
-    if (!home && $('linkNote') && !$('linkNote').hidden) linkNote('');
+    if (scr !== 'game' && $('linkNote') && !$('linkNote').hidden) linkNote('');
     const b = document.body.classList;
     b.toggle('scr-home', home);
     b.toggle('scr-setup', scr === 'setup');
@@ -4622,7 +4625,7 @@
       // Remember the full label so it shows straight away after a refresh
       if (online && online.gameMeta && myRooms.current && myRooms.current.label !== lbl) { myRooms.current.label = lbl; saveRooms(); }
     }
-    try { sessionStorage.setItem(SCREEN_KEY, scr); } catch (e) { /* ignore */ }
+    try { sessionStorage.setItem(SCREEN_KEY, document.body.classList.contains('link-bad') ? 'home' : scr); } catch (e) { /* ignore */ }   // a refresh on the bad-link message opens Home
     if (home) fitWordmark();
   }
   function resumeLabel() {
@@ -6257,8 +6260,7 @@
       myRooms.current = prevCurrent;   // the game that was open before still opens from Home
       saveRooms();
       renderRoomCard();
-      goHome();
-      linkNote('This link isn\'t valid anymore');
+      linkNote('This link isn\'t valid anymore');   // on the same small-title screen; the title takes you Home
       return false;
     }
   }
@@ -7068,12 +7070,12 @@
   }
 
   /* ---------- Room card ---------- */
-  function linkNote(text) {   // a link that doesn't work: just the message; tapping the title (or leaving) shows Home
+  function linkNote(text) {   // a link that doesn't work: just the message; tapping the small title (or going anywhere else) clears it
     $('linkNoteText').textContent = text;
     $('linkNote').hidden = !text;
     document.body.classList.toggle('link-bad', !!text);
   }
-  document.querySelector('.wordmark').addEventListener('click', () => { if (document.body.classList.contains('link-bad')) linkNote(''); });
+
   function roomMsg(text, type) {
     const el = $('roomMsg');
     if (el && !$('roomCard').hidden) setMsg('roomMsg', text, type);
@@ -7327,12 +7329,13 @@
     renderRoomCard();
     if (!FB_CFG) return;
     const L = parseLink();
-    if (L) {   // big title while it loads, then the scoreboard – or the "not valid" message on the same screen
-      atHome = true; document.body.classList.add('link-wait');
+    if (L) {   // small title while it loads, then the scoreboard – or the "not valid" message on the same screen
+      atHome = false; leaveHome(); document.body.classList.add('link-wait');
       const ok = await joinFromLink(L);
       document.body.classList.remove('link-wait');
-      if (ok !== false) { atHome = false; leaveHome(); renderScreen(); return; }
-      renderScreen();   // a bad link falls through to the game that was open
+      renderScreen();
+      if (ok !== false) return;
+      // a bad link: just the message stays; the game that was open loads quietly behind it for Continue on Home
     }
     const c = myRooms.current;
     if (c) {
@@ -7842,7 +7845,7 @@
   // Open the screen that was showing last time (a room link always opens its game)
   (function restoreScreen() {
     let sc = savedScreen;
-    if (parseLink()) { document.body.classList.add('link-wait'); renderScreen(); }   // stay on the big title while the link loads
+    if (parseLink()) { document.body.classList.add('link-wait'); atHome = false; leaveHome(); renderScreen(); }   // scoreboard layout while the link loads
     else if (sc === 'game' && hasOpenGame()) { atHome = false; leaveHome(); renderScreen(); }
     else if (PAGE_TITLE[sc] && (sc !== 'rooms' || FB_CFG)) openPage(sc);
     else if (sc === 'setup') openSetup('game', true);
