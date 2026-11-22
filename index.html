@@ -2132,6 +2132,12 @@
   * { -webkit-tap-highlight-color: transparent; }
   .ico-btn:active, [data-lk]:active { background: #f6e7b8 !important; }
   .ico-btn:focus:not(:focus-visible), [data-lk]:focus:not(:focus-visible) { outline: none; box-shadow: none; }
+  /* "Link copied" bubble next to the copy button */
+  .cp-bub { position: absolute; z-index: 60; background: #fdf0c8; color: #0e5a3a; border: 1px solid #e2bf5c; border-radius: 10px; padding: 6px 10px; font: 700 .78rem Lexend, sans-serif; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,.15); pointer-events: none; animation: cpIn .15s ease-out; transition: opacity .3s; }
+  .cp-bub::after { content: ""; position: absolute; left: var(--ax, 50%); top: 100%; width: 10px; height: 10px; margin: -5px 0 0 -5px; background: #fdf0c8; border-right: 1px solid #e2bf5c; border-bottom: 1px solid #e2bf5c; transform: rotate(45deg); }
+  .cp-bub.below::after { top: 0; transform: rotate(225deg); }
+  .cp-bub.out { opacity: 0; }
+  @keyframes cpIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -7278,6 +7284,22 @@
     </div>`;
   }
 
+  // A small pale-gold bubble pointing at the button that was tapped (above it, or below if there's no room)
+  function copyBubble(btn, text) {
+    document.querySelectorAll('.cp-bub').forEach(e => e.remove());
+    const r = btn.getBoundingClientRect();
+    const d = document.createElement('div');
+    d.className = 'cp-bub'; d.setAttribute('role', 'status'); d.textContent = text;
+    document.body.appendChild(d);
+    const w = d.offsetWidth, h = d.offsetHeight, below = r.top < h + 70;
+    const left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+    d.style.left = (left + scrollX) + 'px';
+    d.style.top = (below ? r.bottom + 10 : r.top - h - 10) + scrollY + 'px';
+    d.style.setProperty('--ax', (r.left + r.width / 2 - left) + 'px');
+    if (below) d.classList.add('below');
+    setTimeout(() => d.classList.add('out'), 1400);
+    setTimeout(() => d.remove(), 1700);
+  }
   async function shareLink(btn) {
     const url = btn.dataset.url, kind = btn.dataset.kind, how = btn.dataset.lk;
     const rid = btn.closest('[data-rid]') ? btn.closest('[data-rid]').dataset.rid : null;
@@ -7289,14 +7311,14 @@
     const text = `RummyTally – ${name}: tap to ${what}\n${url}`;
     if (kind === 'owner' && online && myRooms.rooms[online.roomId]) { myRooms.rooms[online.roomId].savedOwnerLink = true; saveRooms(); }
     if (how === 'copy') {
-      try { await navigator.clipboard.writeText(url); toast('Link copied'); }
+      try { await navigator.clipboard.writeText(url); copyBubble(btn, 'Link copied'); }
       catch (e) { prompt('Copy this link:', url); }
     } else if (how === 'wa') {
       window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener');
     } else if (navigator.share) {
       try { await navigator.share({ title: `Rummy – ${name}`, text: `Rummy – ${name}: tap to ${what}`, url }); } catch (e) { /* cancelled */ }
     } else {
-      try { await navigator.clipboard.writeText(url); toast('Link copied – paste it anywhere'); } catch (e) { prompt('Copy this link:', url); }
+      try { await navigator.clipboard.writeText(url); copyBubble(btn, 'Link copied'); } catch (e) { prompt('Copy this link:', url); }
     }
     try { btn.blur(); } catch (e) { /* ignore */ }   // no focus highlight left on the button afterwards
     if (kind === 'owner') renderRoomCard();
