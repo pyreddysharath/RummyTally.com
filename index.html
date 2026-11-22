@@ -2122,6 +2122,7 @@
   .so-new .su-pn { flex: 1; min-width: 0; padding: 6px 10px; border: 1px solid #e2dbc6; border-radius: 10px; background: #fff; font-size: .82rem; overflow-wrap: anywhere; }
   /* New tab: room between the Add row and the list below it */
   .su-add + .so-tip, .su-add + .so-new { margin-top: 12px; }
+  body.link-wait .hero-foot > * { display: none !important; }   /* a shared link is loading */
 </style>
 <!-- Firebase project settings for online rooms (optional – the app works offline without it) -->
 <script src="js/firebase-config.js"></script>
@@ -2129,7 +2130,8 @@
 <body>
 <script>/* before anything paints: a refresh on Home or a page starts there, so the scoreboard doesn't flash */
   try { const sc = sessionStorage.getItem('rummy-screen') || ''; const b = document.body.classList;
-    if (!new URLSearchParams(location.search).get('r')) {
+    if (new URLSearchParams(location.search).get('r')) b.add('scr-home', 'link-wait');   // opening a shared link: big title only until it loads
+    else {
       if (sc === '' || sc === 'home') b.add('scr-home');
       else if (sc !== 'setup' && sc !== 'game') b.add('page-mode', 'nav-mode');   // My Rooms, Stats and the menu pages
     } } catch (e) { /* the app sets it once loaded */ }</script>
@@ -7325,7 +7327,13 @@
     renderRoomCard();
     if (!FB_CFG) return;
     const L = parseLink();
-    if (L) { atHome = false; leaveHome(); const ok = await joinFromLink(L); renderScreen(); if (ok !== false) return; }   // a bad link falls through to the game that was open
+    if (L) {   // big title while it loads, then the scoreboard – or the "not valid" message on the same screen
+      atHome = true; document.body.classList.add('link-wait');
+      const ok = await joinFromLink(L);
+      document.body.classList.remove('link-wait');
+      if (ok !== false) { atHome = false; leaveHome(); renderScreen(); return; }
+      renderScreen();   // a bad link falls through to the game that was open
+    }
     const c = myRooms.current;
     if (c) {
       const en = c.scope === 'game' ? myRooms.games[c.roomId + '_' + c.gameId] : myRooms.rooms[c.roomId];
@@ -7834,8 +7842,8 @@
   // Open the screen that was showing last time (a room link always opens its game)
   (function restoreScreen() {
     let sc = savedScreen;
-    if (parseLink()) sc = 'game';
-    if (sc === 'game' && hasOpenGame()) { atHome = false; leaveHome(); renderScreen(); }
+    if (parseLink()) { document.body.classList.add('link-wait'); renderScreen(); }   // stay on the big title while the link loads
+    else if (sc === 'game' && hasOpenGame()) { atHome = false; leaveHome(); renderScreen(); }
     else if (PAGE_TITLE[sc] && (sc !== 'rooms' || FB_CFG)) openPage(sc);
     else if (sc === 'setup') openSetup('game', true);
     else renderScreen();
