@@ -260,7 +260,8 @@
   .ico-btn { min-height: 0; width: 32px; height: 32px; padding: 0; flex: 0 0 auto; border: 0; background: none; color: var(--felt);
     display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; font-size: .95rem; cursor: pointer; }
   .ico-btn svg { width: 18px; height: 18px; }
-  .ico-btn:hover, .ico-btn.on { background: #eef6f1; }
+  .ico-btn.on { background: #eef6f1; }
+  @media (hover: hover) { .ico-btn:hover { background: #eef6f1; } }   /* phones keep 'hover' after a tap – only mouse users get it */
   .ico-btn.del { color: var(--red); }
   .ico-btn[hidden] { display: none; }
   .link-del { min-height: 0; padding: 4px 0; border: 0; background: none; color: var(--red); font-size: .84rem; font-weight: 700;
